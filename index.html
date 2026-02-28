@@ -3,155 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevIntel - Market Depth Tool</title>
+    <title>Steam Dev Intel Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .glass { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(51, 65, 85, 1); }
-        body { background: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .accent-text { color: #22d3ee; }
-        .card-title { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center mb-10 gap-6">
+    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
-            <h1 class="text-4xl font-black tracking-tighter italic">DEV<span class="text-cyan-500">INTEL</span></h1>
-            <p class="text-slate-500 text-sm">Market Benchmarking & Genre Deep-Dive</p>
+            <h1 class="text-3xl font-bold text-cyan-400">SteamDev <span class="text-slate-500 text-xl font-light">Intel</span></h1>
+            <p class="text-slate-400 text-sm">Personal Market Research Tool</p>
         </div>
-        <div class="flex gap-2 w-full lg:w-auto">
-            <input id="appId" type="text" placeholder="Enter AppID" class="bg-slate-900 border border-slate-700 p-3 rounded-lg flex-1 lg:w-40 outline-none focus:border-cyan-500">
-            <button onclick="analyzeMarket()" class="bg-cyan-600 hover:bg-cyan-400 text-white font-bold px-8 py-3 rounded-lg transition-all shadow-lg shadow-cyan-900/20">Analyze Market</button>
-        </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <div class="lg:col-span-4 space-y-6">
-            <div id="subjectGame" class="glass rounded-2xl overflow-hidden p-6 hidden">
-                <img id="gImg" src="" class="w-full rounded-xl mb-4 grayscale hover:grayscale-0 transition-all duration-700">
-                <h2 id="gTitle" class="text-2xl font-bold mb-1"></h2>
-                <p id="gGenre" class="text-cyan-500 text-sm font-semibold mb-6 italic"></p>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-                        <p class="card-title">Est. Revenue (Med)</p>
-                        <p id="gRev" class="text-xl font-bold text-emerald-400 mt-1">$0</p>
-                    </div>
-                    <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-                        <p class="card-title">Reviews</p>
-                        <p id="gReviews" class="text-xl font-bold text-amber-400 mt-1">0</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="lg:col-span-8 space-y-8">
-            <div class="glass rounded-2xl p-8">
-                <h3 class="card-title mb-6">Genre Benchmark (Top 10 Sellers)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center">
-                        <p class="text-slate-400 text-xs">Avg. Owners</p>
-                        <p id="avgOwners" class="text-3xl font-black text-white italic mt-1">--</p>
-                    </div>
-                    <div class="text-center border-x border-slate-800">
-                        <p class="text-slate-400 text-xs">Avg. Price</p>
-                        <p id="avgPrice" class="text-3xl font-black text-white italic mt-1">--</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-slate-400 text-xs">Est. Market Ceiling</p>
-                        <p id="marketCeiling" class="text-3xl font-black text-cyan-400 italic mt-1">--</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-2xl p-8">
-                <h3 class="card-title mb-6">Market Leaders in this Category</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="text-slate-500 border-b border-slate-800">
-                            <tr>
-                                <th class="pb-3">Game</th>
-                                <th class="pb-3">Est. Owners</th>
-                                <th class="pb-3">Price</th>
-                                <th class="pb-3 text-right">Revenue Est.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="competitorList" class="divide-y divide-slate-800">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-2">
+            <input id="apiKey" type="password" placeholder="Steam API Key" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-48 text-white">
+            <input id="appId" type="text" placeholder="AppID (e.g. 105600)" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-36 text-white">
+            <button onclick="fetchData()" id="btnText" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded font-bold transition">Analyze Game</button>
         </div>
     </div>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="space-y-6">
+            <div id="gameCard" class="glass border border-slate-700 p-6 rounded-xl hidden">
+                <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600 shadow-xl">
+                <h2 id="gameTitle" class="text-xl font-bold text-white"></h2>
+                <p id="gameDev" class="text-slate-400 text-sm mb-4"></p>
+                <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-400 uppercase">Price</span>
+                    <span id="gamePrice" class="text-green-400 font-bold">--</span>
+                </div>
+            </div>
+
+            <div class="glass border border-slate-700 p-6 rounded-xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Est. Gross Revenue</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[10px] text-slate-400 mb-1">Low (30x reviews)</p>
+                        <p id="revLow" class="text-2xl font-bold text-emerald-400">$0</p>
+                    </div>
+                    <div class="pt-2 border-t border-slate-800">
+                        <p class="text-[10px] text-slate-400 mb-1">High (60x reviews)</p>
+                        <p id="revHigh" class="text-2xl font-bold text-emerald-500">$0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:col-span-2 space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass border border-slate-700 p-5 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase mb-1">Live Players</p>
+                    <p id="livePlayers" class="text-3xl font-black text-cyan-400">0</p>
+                </div>
+                <div class="glass border border-slate-700 p-5 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase mb-1">Verified Reviews</p>
+                    <p id="totalReviews" class="text-3xl font-black text-amber-400">0</p>
+                </div>
+            </div>
+
+            <div class="glass border border-slate-700 p-6 rounded-xl h-80">
+                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Review Sentiment Ratio</h3>
+                <canvas id="sentimentChart"></canvas>
+            </div>
+
+            <div class="glass border border-slate-700 p-6 rounded-xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Genre Tags</h3>
+                <div id="tagContainer" class="flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+    </main>
 
     <script>
-        const proxy = "https://api.allorigins.win/raw?url=";
+        let sentimentChart;
+        // Key is only stored in your personal browser local storage
+        document.getElementById('apiKey').value = localStorage.getItem('steam_key') || '';
 
-        async function analyzeMarket() {
+        async function fetchData() {
+            const key = document.getElementById('apiKey').value;
             const appId = document.getElementById('appId').value;
-            if(!appId) return;
+            const btn = document.getElementById('btnText');
+            
+            if(!key || !appId) return alert("Enter Key and AppID");
+            localStorage.setItem('steam_key', key);
+            
+            btn.innerText = "Fetching...";
+            btn.classList.add('loading');
+
+            // Using CorsProxy.io - simpler than cors-anywhere
+            const proxy = "https://corsproxy.io/?";
 
             try {
-                // 1. Get Subject Game Details
-                const storeRes = await fetch(`${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`);
-                const storeData = await storeRes.json();
-                const game = storeData[appId].data;
-                const genre = game.genres[0].description; // Primary genre
+                // 1. App Details (Price, Tags, Image)
+                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`;
+                const storeRes = await fetch(storeUrl);
+                const storeJson = await storeRes.json();
+                
+                if (!storeJson[appId].success) throw new Error("Game not found");
+                const game = storeJson[appId].data;
 
-                // 2. Get Top Games in that Genre from SteamSpy
-                const genreRes = await fetch(`${proxy}${encodeURIComponent(`https://steamspy.com/api.php?request=genre&genre=${genre.replace(' ', '+')}`)}`);
-                const genreData = await genreRes.json();
+                // 2. Review Data (Exact count and sentiment)
+                const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=0`)}`;
+                const reviewRes = await fetch(reviewUrl);
+                const reviewJson = await reviewRes.json();
 
-                updateUI(game, genre, Object.values(genreData).slice(0, 10));
+                // 3. Live Players
+                const playerUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`)}`;
+                const playerRes = await fetch(playerUrl);
+                const playerJson = await playerRes.json();
+
+                updateUI(game, reviewJson.query_summary, playerJson.response.player_count);
             } catch (err) {
                 console.error(err);
-                alert("Error fetching depth data. Check AppID.");
+                alert("Error: Likely a CORS block. Try a different AppID or check your API key.");
+            } finally {
+                btn.innerText = "Analyze Game";
+                btn.classList.remove('loading');
             }
         }
 
-        function updateUI(game, genreName, topGames) {
-            document.getElementById('subjectGame').classList.remove('hidden');
-            document.getElementById('gTitle').innerText = game.name;
-            document.getElementById('gGenre').innerText = `Primary Genre: ${genreName}`;
-            document.getElementById('gImg').src = game.header_image;
+        function updateUI(game, reviews, players) {
+            document.getElementById('gameCard').classList.remove('hidden');
+            document.getElementById('gameTitle').innerText = game.name;
+            document.getElementById('gameDev').innerText = game.developers ? game.developers.join(', ') : "Unknown Dev";
+            document.getElementById('gameImg').src = game.header_image;
+            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : (game.price_overview ? game.price_overview.final_formatted : "N/A");
             
-            // Calc Subject Revenue
-            const reviews = game.recommendations ? game.recommendations.total : 1000;
+            document.getElementById('livePlayers').innerText = players.toLocaleString();
+            document.getElementById('totalReviews').innerText = reviews.total_reviews.toLocaleString();
+
+            // Revenue Math (Boxleiter)
             const price = game.is_free ? 0 : (game.price_overview ? game.price_overview.final / 100 : 0);
-            const medRev = reviews * 45 * price;
+            const revLow = reviews.total_reviews * 30 * price;
+            const revHigh = reviews.total_reviews * 60 * price;
             
-            document.getElementById('gReviews').innerText = reviews.toLocaleString();
-            document.getElementById('gRev').innerText = "$" + Math.floor(medRev).toLocaleString();
+            document.getElementById('revLow').innerText = "$" + Math.floor(revLow).toLocaleString();
+            document.getElementById('revHigh').innerText = "$" + Math.floor(revHigh).toLocaleString();
 
-            // Market Leader Stats
-            let totalOwners = 0;
-            let totalPrice = 0;
-            const tableBody = document.getElementById('competitorList');
-            tableBody.innerHTML = '';
-
-            topGames.forEach(g => {
-                const price = g.price ? g.price / 100 : 0;
-                // SteamSpy gives owners as a range like "10,000,000 .. 20,000,000"
-                const ownerCount = parseInt(g.owners.replace(/,/g, '').split(' .. ')[1]) || 0;
-                const rev = ownerCount * price;
-
-                totalOwners += ownerCount;
-                totalPrice += price;
-
-                const row = `<tr class="hover:bg-slate-900/50 transition">
-                    <td class="py-4 font-bold text-white">${g.name}</td>
-                    <td class="py-4 text-slate-400">${g.owners}</td>
-                    <td class="py-4 text-slate-400">$${price.toFixed(2)}</td>
-                    <td class="py-4 text-emerald-400 font-bold text-right">$${Math.floor(rev).toLocaleString()}</td>
-                </tr>`;
-                tableBody.insertAdjacentHTML('beforeend', row);
+            // Tags
+            const tagBox = document.getElementById('tagContainer');
+            tagBox.innerHTML = '';
+            const categories = game.genres || [];
+            categories.forEach(cat => {
+                const span = document.createElement('span');
+                span.className = "px-3 py-1 bg-slate-800 rounded text-xs text-cyan-400 border border-slate-700";
+                span.innerText = cat.description;
+                tagBox.appendChild(span);
             });
 
-            document.getElementById('avgOwners').innerText = Math.floor(totalOwners / 10).toLocaleString();
-            document.getElementById('avgPrice').innerText = "$" + (totalPrice / 10).toFixed(2);
-            document.getElementById('marketCeiling').innerText = "$" + Math.floor((totalOwners/10) * (totalPrice/10)).toLocaleString();
+            // Chart
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            if(sentimentChart) sentimentChart.destroy();
+            sentimentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Negative'],
+                    datasets: [{
+                        data: [reviews.total_positive, reviews.total_negative],
+                        backgroundColor: ['#2dd4bf', '#f43f5e'],
+                        borderColor: '#1e293b',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                }
+            });
         }
     </script>
 </body>
