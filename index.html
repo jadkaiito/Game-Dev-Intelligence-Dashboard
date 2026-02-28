@@ -3,177 +3,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steam Dev Intel Dashboard</title>
+    <title>SteamDev Intel — Advanced Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        * { font-family: 'JetBrains Mono', monospace; }
+        h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -1px; }
+        
+        body { 
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1427 100%);
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+        
+        .glass { 
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .glass-hot {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .accent-cyan { color: #06b6d4; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
+        .accent-emerald { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+        .accent-amber { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+        .accent-red { color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        
+        .loading { animation: pulse-glow 1.5s ease-in-out infinite; }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .metric-box { transition: all 0.3s ease; }
+        .metric-box:hover { transform: translateY(-2px); border-color: rgba(6, 182, 212, 0.6); }
+        
+        .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        
+        .tag { 
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .tag-category {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #10b981;
+        }
+        
+        .tag-platform {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #f59e0b;
+        }
+        
+        .counter { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; }
+        .counter-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+        
+        .scanline { position: relative; }
+        .scanline::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.15) 0px,
+                rgba(0,0,0,0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+        }
+
+        .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 1024px) { .stat-grid-3 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .stat-grid-3 { grid-template-columns: 1fr; } }
+
+        input, textarea { 
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #f1f5f9;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: #0f172a;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); transform: translateY(-2px); }
+
+        .chart-container { position: relative; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-6">
 
-    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-cyan-400">SteamDev <span class="text-slate-500 text-xl font-light">Intel</span></h1>
-            <p class="text-slate-400 text-sm">Personal Market Research Tool</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <input id="apiKey" type="password" placeholder="Steam API Key" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-48 text-white">
-            <input id="appId" type="text" placeholder="AppID (e.g. 105600)" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-36 text-white">
-            <button onclick="fetchData()" id="btnText" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded font-bold transition">Analyze Game</button>
+    <!-- HEADER -->
+    <div class="max-w-8xl mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-700/50">
+            <div>
+                <h1 class="text-5xl font-bold mb-2 accent-cyan">STEAMDEV INTEL</h1>
+                <p class="text-slate-400 text-sm uppercase tracking-widest">Military-Grade Market Analysis Protocol</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <input id="apiKey" type="password" placeholder="Steam API Key" class="rounded px-3 py-2 text-sm w-48">
+                <input id="appId" type="text" placeholder="AppID" class="rounded px-3 py-2 text-sm w-32">
+                <button onclick="fetchData()" id="btnText" class="btn-primary px-6 py-2 rounded font-bold uppercase text-xs">▶ ANALYZE</button>
+            </div>
         </div>
     </div>
 
-    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="space-y-6">
-            <div id="gameCard" class="glass border border-slate-700 p-6 rounded-xl hidden">
-                <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600 shadow-xl">
-                <h2 id="gameTitle" class="text-xl font-bold text-white"></h2>
-                <p id="gameDev" class="text-slate-400 text-sm mb-4"></p>
-                <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-                    <span class="text-xs text-slate-400 uppercase">Price</span>
-                    <span id="gamePrice" class="text-green-400 font-bold">--</span>
-                </div>
-            </div>
-
-            <div class="glass border border-slate-700 p-6 rounded-xl">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Est. Gross Revenue</h3>
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-[10px] text-slate-400 mb-1">Low (30x reviews)</p>
-                        <p id="revLow" class="text-2xl font-bold text-emerald-400">$0</p>
-                    </div>
-                    <div class="pt-2 border-t border-slate-800">
-                        <p class="text-[10px] text-slate-400 mb-1">High (60x reviews)</p>
-                        <p id="revHigh" class="text-2xl font-bold text-emerald-500">$0</p>
-                    </div>
-                </div>
-            </div>
+    <main class="max-w-8xl mx-auto">
+        <div id="loadingScreen" class="text-center py-12">
+            <p class="text-slate-400 text-sm">Enter Steam API Key and AppID to begin</p>
         </div>
 
-        <div class="md:col-span-2 space-y-6">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="glass border border-slate-700 p-5 rounded-xl">
-                    <p class="text-xs text-slate-500 uppercase mb-1">Live Players</p>
-                    <p id="livePlayers" class="text-3xl font-black text-cyan-400">0</p>
+        <div id="dataPanel" class="hidden space-y-6">
+
+            <!-- PRIMARY GAME INFO -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="glass rounded-lg p-6 border border-slate-700/50">
+                    <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600/50 shadow-lg">
+                    <h2 id="gameTitle" class="text-2xl font-bold text-white mb-2"></h2>
+                    <p id="gameDev" class="text-slate-400 text-sm mb-4"></p>
+                    <p id="gameDesc" class="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-3"></p>
+                    <div class="space-y-2 pt-4 border-t border-slate-700/30">
+                        <div class="flex justify-between">
+                            <span class="text-xs text-slate-500 uppercase">Price</span>
+                            <span id="gamePrice" class="text-emerald-400 font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-slate-500 uppercase">Release</span>
+                            <span id="gameRelease" class="text-slate-300 text-sm">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-slate-500 uppercase">Platform</span>
+                            <span id="gamePlatforms" class="text-slate-300 text-sm">--</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="glass border border-slate-700 p-5 rounded-xl">
-                    <p class="text-xs text-slate-500 uppercase mb-1">Verified Reviews</p>
-                    <p id="totalReviews" class="text-3xl font-black text-amber-400">0</p>
+
+                <!-- KEY METRICS -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="grid stat-grid-3 gap-4">
+                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-emerald-500/30 scanline">
+                            <p class="counter-label accent-emerald">Live Players</p>
+                            <p id="livePlayers" class="counter accent-emerald">0</p>
+                        </div>
+                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-amber-500/30 scanline">
+                            <p class="counter-label accent-amber">Total Reviews</p>
+                            <p id="totalReviews" class="counter accent-amber">0</p>
+                        </div>
+                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-cyan-500/30 scanline">
+                            <p class="counter-label accent-cyan">Positive %</p>
+                            <p id="positivePercent" class="counter accent-cyan">0%</p>
+                        </div>
+                    </div>
+
+                    <!-- REVENUE ESTIMATES -->
+                    <div class="glass rounded-lg p-6 border border-slate-700/50">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estimated Gross Revenue</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900/50 rounded px-3 py-3">
+                                <p class="text-[10px] text-slate-500 uppercase mb-1">Conservative (30x)</p>
+                                <p id="revLow" class="text-xl font-bold accent-emerald">$0</p>
+                            </div>
+                            <div class="bg-slate-900/50 rounded px-3 py-3">
+                                <p class="text-[10px] text-slate-500 uppercase mb-1">Aggressive (60x)</p>
+                                <p id="revHigh" class="text-xl font-bold accent-emerald">$0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="glass border border-slate-700 p-6 rounded-xl h-80">
-                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Review Sentiment Ratio</h3>
-                <canvas id="sentimentChart"></canvas>
+            <!-- CHARTS & ANALYSIS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Sentiment Donut -->
+                <div class="glass rounded-lg p-6 border border-slate-700/50 h-80">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Review Sentiment</h3>
+                    <div class="chart-container h-full relative">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Score vs Player Count -->
+                <div class="glass rounded-lg p-6 border border-slate-700/50 h-80">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Review Score Breakdown</h3>
+                    <div class="chart-container h-full">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="glass border border-slate-700 p-6 rounded-xl">
-                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Genre Tags</h3>
-                <div id="tagContainer" class="flex flex-wrap gap-2"></div>
+            <!-- DETAILED METRICS GRID -->
+            <div class="grid stat-grid-3 gap-4">
+                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
+                    <p class="counter-label">Avg Review Length</p>
+                    <p id="avgReviewLength" class="counter text-xl">0</p>
+                    <p class="text-slate-500 text-xs mt-2">characters</p>
+                </div>
+                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
+                    <p class="counter-label">Recent Score</p>
+                    <p id="recentScore" class="counter text-xl accent-amber">0%</p>
+                    <p class="text-slate-500 text-xs mt-2">(last 30 days)</p>
+                </div>
+                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
+                    <p class="counter-label">All-Time Score</p>
+                    <p id="allTimeScore" class="counter text-xl accent-cyan">0%</p>
+                    <p class="text-slate-500 text-xs mt-2">cumulative</p>
+                </div>
             </div>
+
+            <!-- ADVANCED STATS -->
+            <div class="glass rounded-lg p-6 border border-slate-700/50">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Advanced Metrics</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase mb-2">Peak Players</p>
+                        <p id="peakPlayers" class="text-lg font-bold accent-cyan">--</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase mb-2">Age (Days)</p>
+                        <p id="gamAge" class="text-lg font-bold accent-amber">--</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase mb-2">Reviews/Day</p>
+                        <p id="reviewsPerDay" class="text-lg font-bold accent-emerald">--</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase mb-2">Est. Sales/Month</p>
+                        <p id="estimatedSalesMonth" class="text-lg font-bold accent-red">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAGS & CATEGORIES -->
+            <div class="glass rounded-lg p-6 border border-slate-700/50">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Categories</h3>
+                <div id="categoryTags" class="flex flex-wrap gap-2 mb-6"></div>
+                
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Genres</h3>
+                <div id="genreTags" class="flex flex-wrap gap-2 mb-6"></div>
+
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Platforms</h3>
+                <div id="platformTags" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- RAW JSON EXPORT -->
+            <div class="glass rounded-lg p-6 border border-slate-700/50">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Raw Data Export</h3>
+                <textarea id="jsonExport" class="w-full rounded p-3 text-xs font-mono h-48" readonly></textarea>
+                <button onclick="copyJson()" class="btn-primary px-4 py-2 rounded text-xs uppercase font-bold mt-3">Copy JSON</button>
+            </div>
+
         </div>
     </main>
 
     <script>
-        let sentimentChart;
-        // Key is only stored in your personal browser local storage
+        let sentimentChart, scoreChart;
+        let rawData = {};
+
         document.getElementById('apiKey').value = localStorage.getItem('steam_key') || '';
+        document.getElementById('appId').value = localStorage.getItem('steam_appid') || '';
 
         async function fetchData() {
             const key = document.getElementById('apiKey').value;
             const appId = document.getElementById('appId').value;
             const btn = document.getElementById('btnText');
             
-            if(!key || !appId) return alert("Enter Key and AppID");
+            if(!key || !appId) return alert("Enter API Key and AppID");
             localStorage.setItem('steam_key', key);
+            localStorage.setItem('steam_appid', appId);
             
-            btn.innerText = "Fetching...";
+            btn.innerText = "⧖ SCANNING...";
             btn.classList.add('loading');
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('dataPanel').classList.remove('hidden');
 
-            // Using CorsProxy.io - simpler than cors-anywhere
             const proxy = "https://corsproxy.io/?";
 
             try {
-                // 1. App Details (Price, Tags, Image)
+                // 1. Store API - Game Details
                 const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`;
                 const storeRes = await fetch(storeUrl);
                 const storeJson = await storeRes.json();
                 
-                if (!storeJson[appId].success) throw new Error("Game not found");
-                const game = storeJson[appId].data;
+                if (!storeJson[appId] || !storeJson[appId].success) throw new Error("Game not found");
+                const gameData = storeJson[appId].data;
 
-                // 2. Review Data (Exact count and sentiment)
+                // 2. Reviews API - All review data
                 const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=0`)}`;
                 const reviewRes = await fetch(reviewUrl);
-                const reviewJson = await reviewRes.json();
+                const reviewData = await reviewRes.json();
 
-                // 3. Live Players
+                // 3. Current Players
                 const playerUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`)}`;
                 const playerRes = await fetch(playerUrl);
-                const playerJson = await playerRes.json();
+                const playerData = await playerRes.json();
 
-                updateUI(game, reviewJson.query_summary, playerJson.response.player_count);
+                // 4. App Schema (for achievement/stat details - optional but adds data)
+                const schemaUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${key}`)}`;
+                let schemaData = null;
+                try {
+                    const schemaRes = await fetch(schemaUrl);
+                    schemaData = await schemaRes.json();
+                } catch(e) { console.log("Schema fetch failed (not critical)"); }
+
+                rawData = {
+                    game: gameData,
+                    reviews: reviewData.query_summary,
+                    players: playerData.response.player_count,
+                    schema: schemaData
+                };
+
+                updateUI(gameData, reviewData.query_summary, playerData.response.player_count, schemaData);
             } catch (err) {
                 console.error(err);
-                alert("Error: Likely a CORS block. Try a different AppID or check your API key.");
+                alert("Error: " + err.message + "\nCheck API Key and AppID");
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                document.getElementById('dataPanel').classList.add('hidden');
             } finally {
-                btn.innerText = "Analyze Game";
+                btn.innerText = "▶ ANALYZE";
                 btn.classList.remove('loading');
             }
         }
 
-        function updateUI(game, reviews, players) {
-            document.getElementById('gameCard').classList.remove('hidden');
+        function updateUI(game, reviews, players, schema) {
+            // Basic Info
             document.getElementById('gameTitle').innerText = game.name;
-            document.getElementById('gameDev').innerText = game.developers ? game.developers.join(', ') : "Unknown Dev";
+            document.getElementById('gameDev').innerText = game.developers?.join(', ') || "Unknown Dev";
+            document.getElementById('gameDesc').innerText = game.short_description || "";
             document.getElementById('gameImg').src = game.header_image;
-            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : (game.price_overview ? game.price_overview.final_formatted : "N/A");
             
+            const price = game.is_free ? 0 : (game.price_overview?.final / 100 || 0);
+            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : `$${price.toFixed(2)}`;
+            document.getElementById('gameRelease').innerText = game.release_date?.date || "N/A";
+            
+            // Platforms
+            const platforms = [];
+            if(game.platforms?.windows) platforms.push("Windows");
+            if(game.platforms?.mac) platforms.push("Mac");
+            if(game.platforms?.linux) platforms.push("Linux");
+            document.getElementById('gamePlatforms').innerText = platforms.join(", ");
+
+            // KEY METRICS
             document.getElementById('livePlayers').innerText = players.toLocaleString();
             document.getElementById('totalReviews').innerText = reviews.total_reviews.toLocaleString();
+            
+            const positivePercent = reviews.total_reviews > 0 ? 
+                Math.round((reviews.total_positive / reviews.total_reviews) * 100) : 0;
+            document.getElementById('positivePercent').innerText = positivePercent + "%";
 
-            // Revenue Math (Boxleiter)
-            const price = game.is_free ? 0 : (game.price_overview ? game.price_overview.final / 100 : 0);
+            // Recent vs All-Time
+            const recentScore = reviews.total_reviews_recent > 0 ?
+                Math.round((reviews.total_positive_recent / reviews.total_reviews_recent) * 100) : 0;
+            const allTimeScore = positivePercent;
+            document.getElementById('recentScore').innerText = recentScore + "%";
+            document.getElementById('allTimeScore').innerText = allTimeScore + "%";
+
+            // Revenue Estimates
             const revLow = reviews.total_reviews * 30 * price;
             const revHigh = reviews.total_reviews * 60 * price;
-            
             document.getElementById('revLow').innerText = "$" + Math.floor(revLow).toLocaleString();
             document.getElementById('revHigh').innerText = "$" + Math.floor(revHigh).toLocaleString();
 
-            // Tags
-            const tagBox = document.getElementById('tagContainer');
-            tagBox.innerHTML = '';
-            const categories = game.genres || [];
-            categories.forEach(cat => {
-                const span = document.createElement('span');
-                span.className = "px-3 py-1 bg-slate-800 rounded text-xs text-cyan-400 border border-slate-700";
-                span.innerText = cat.description;
-                tagBox.appendChild(span);
-            });
+            // Advanced Stats
+            const releaseDate = new Date(game.release_date?.date || new Date());
+            const gameDays = Math.floor((Date.now() - releaseDate.getTime()) / (1000 * 60 * 60 * 24));
+            const reviewsPerDay = gameDays > 0 ? (reviews.total_reviews / gameDays).toFixed(2) : 0;
+            const estimatedMonthly = (revLow + revHigh) / 2 / 12;
 
-            // Chart
-            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            document.getElementById('peakPlayers').innerText = "--"; // Steam doesn't expose this publicly
+            document.getElementById('gamAge').innerText = gameDays + " days";
+            document.getElementById('reviewsPerDay').innerText = reviewsPerDay;
+            document.getElementById('estimatedSalesMonth').innerText = "$" + Math.floor(estimatedMonthly).toLocaleString();
+            document.getElementById('avgReviewLength').innerText = reviews.review_score_desc || "N/A";
+
+            // TAGS - Categories
+            const categoryBox = document.getElementById('categoryTags');
+            categoryBox.innerHTML = '';
+            if(game.categories) {
+                game.categories.forEach(cat => {
+                    const span = document.createElement('span');
+                    span.className = "tag tag-category";
+                    span.innerText = cat.description;
+                    categoryBox.appendChild(span);
+                });
+            }
+
+            // TAGS - Genres
+            const genreBox = document.getElementById('genreTags');
+            genreBox.innerHTML = '';
+            if(game.genres) {
+                game.genres.forEach(gen => {
+                    const span = document.createElement('span');
+                    span.className = "tag tag-category";
+                    span.innerText = gen.description;
+                    genreBox.appendChild(span);
+                });
+            }
+
+            // TAGS - Platforms
+            const platBox = document.getElementById('platformTags');
+            platBox.innerHTML = '';
+            if(game.platforms?.windows) {
+                const sp = document.createElement('span');
+                sp.className = "tag tag-platform";
+                sp.innerText = "WINDOWS";
+                platBox.appendChild(sp);
+            }
+            if(game.platforms?.mac) {
+                const sp = document.createElement('span');
+                sp.className = "tag tag-platform";
+                sp.innerText = "MACOS";
+                platBox.appendChild(sp);
+            }
+            if(game.platforms?.linux) {
+                const sp = document.createElement('span');
+                sp.className = "tag tag-platform";
+                sp.innerText = "LINUX";
+                platBox.appendChild(sp);
+            }
+
+            // CHART 1: Sentiment Donut
+            const ctx1 = document.getElementById('sentimentChart').getContext('2d');
             if(sentimentChart) sentimentChart.destroy();
-            sentimentChart = new Chart(ctx, {
+            sentimentChart = new Chart(ctx1, {
                 type: 'doughnut',
                 data: {
                     labels: ['Positive', 'Negative'],
                     datasets: [{
                         data: [reviews.total_positive, reviews.total_negative],
-                        backgroundColor: ['#2dd4bf', '#f43f5e'],
-                        borderColor: '#1e293b',
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderColor: '#0a0e27',
                         borderWidth: 4
                     }]
                 },
                 options: {
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace", size: 11 } }
+                        }
+                    }
                 }
             });
+
+            // CHART 2: Score Breakdown
+            const ctx2 = document.getElementById('scoreChart').getContext('2d');
+            if(scoreChart) scoreChart.destroy();
+            scoreChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['All-Time', 'Recent (30d)'],
+                    datasets: [{
+                        label: 'Positive %',
+                        data: [allTimeScore, recentScore],
+                        backgroundColor: ['#06b6d4', '#10b981'],
+                        borderColor: '#0a0e27',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            max: 100,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace" } }
+                        }
+                    }
+                }
+            });
+
+            // JSON Export
+            document.getElementById('jsonExport').value = JSON.stringify(rawData, null, 2);
+        }
+
+        function copyJson() {
+            const textarea = document.getElementById('jsonExport');
+            textarea.select();
+            document.execCommand('copy');
+            alert("JSON copied to clipboard!");
         }
     </script>
 </body>
