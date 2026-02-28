@@ -9,162 +9,169 @@
     <style>
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
         body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
             <h1 class="text-3xl font-bold text-cyan-400">SteamDev <span class="text-slate-500 text-xl font-light">Intel</span></h1>
-            <p class="text-slate-400 text-sm">Market Research & Revenue Estimator</p>
+            <p class="text-slate-400 text-sm">Personal Market Research Tool</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <input id="apiKey" type="password" placeholder="Paste Steam API Key" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 w-48">
-            <input id="appId" type="text" placeholder="AppID (e.g. 105600)" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 w-32">
-            <button onclick="fetchData()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded font-bold transition">Analyze</button>
+            <input id="apiKey" type="password" placeholder="Steam API Key" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-48 text-white">
+            <input id="appId" type="text" placeholder="AppID (e.g. 105600)" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-36 text-white">
+            <button onclick="fetchData()" id="btnText" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded font-bold transition">Analyze Game</button>
         </div>
     </div>
 
     <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        
         <div class="space-y-6">
             <div id="gameCard" class="glass border border-slate-700 p-6 rounded-xl hidden">
-                <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600">
-                <h2 id="gameTitle" class="text-xl font-bold">Game Title</h2>
-                <p id="gameDev" class="text-slate-400 text-sm mb-2">Developer Name</p>
-                <div class="flex gap-2 mb-4">
-                    <span id="gamePrice" class="bg-green-900/50 text-green-400 px-2 py-1 rounded text-xs font-bold border border-green-700">--</span>
-                    <span id="gameStatus" class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs">Released</span>
+                <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600 shadow-xl">
+                <h2 id="gameTitle" class="text-xl font-bold text-white"></h2>
+                <p id="gameDev" class="text-slate-400 text-sm mb-4"></p>
+                <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-400 uppercase">Price</span>
+                    <span id="gamePrice" class="text-green-400 font-bold">--</span>
                 </div>
             </div>
 
             <div class="glass border border-slate-700 p-6 rounded-xl">
-                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Est. Gross Revenue</h3>
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Est. Gross Revenue</h3>
                 <div class="space-y-4">
                     <div>
-                        <p class="text-xs text-slate-500">Low Estimate (30x Reviews)</p>
+                        <p class="text-[10px] text-slate-400 mb-1">Low (30x reviews)</p>
                         <p id="revLow" class="text-2xl font-bold text-emerald-400">$0</p>
                     </div>
-                    <div>
-                        <p class="text-xs text-slate-500">High Estimate (60x Reviews)</p>
-                        <p id="revHigh" class="text-2xl font-bold text-emerald-400">$0</p>
+                    <div class="pt-2 border-t border-slate-800">
+                        <p class="text-[10px] text-slate-400 mb-1">High (60x reviews)</p>
+                        <p id="revHigh" class="text-2xl font-bold text-emerald-500">$0</p>
                     </div>
-                    <p class="text-[10px] text-slate-500 italic">*Based on the Boxleiter Multiplier. Does not account for regional pricing or Steam's 30% cut.</p>
                 </div>
             </div>
         </div>
 
         <div class="md:col-span-2 space-y-6">
             <div class="grid grid-cols-2 gap-4">
-                <div class="glass border border-slate-700 p-4 rounded-xl">
-                    <p class="text-xs text-slate-400">Live Players</p>
-                    <p id="livePlayers" class="text-2xl font-bold text-cyan-400">0</p>
+                <div class="glass border border-slate-700 p-5 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase mb-1">Live Players</p>
+                    <p id="livePlayers" class="text-3xl font-black text-cyan-400">0</p>
                 </div>
-                <div class="glass border border-slate-700 p-4 rounded-xl">
-                    <p class="text-xs text-slate-400">Total Reviews</p>
-                    <p id="totalReviews" class="text-2xl font-bold text-amber-400">0</p>
+                <div class="glass border border-slate-700 p-5 rounded-xl">
+                    <p class="text-xs text-slate-500 uppercase mb-1">Verified Reviews</p>
+                    <p id="totalReviews" class="text-3xl font-black text-amber-400">0</p>
                 </div>
             </div>
 
             <div class="glass border border-slate-700 p-6 rounded-xl h-80">
-                <h3 class="text-sm font-semibold text-slate-400 mb-4">Review Sentiment</h3>
+                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Review Sentiment Ratio</h3>
                 <canvas id="sentimentChart"></canvas>
             </div>
 
             <div class="glass border border-slate-700 p-6 rounded-xl">
-                <h3 class="text-sm font-semibold text-slate-400 mb-4">Top Genre Tags</h3>
-                <div id="tagContainer" class="flex flex-wrap gap-2">
-                    </div>
+                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Genre Tags</h3>
+                <div id="tagContainer" class="flex flex-wrap gap-2"></div>
             </div>
         </div>
     </main>
 
     <script>
         let sentimentChart;
-
-        // Load saved API key
+        // Key is only stored in your personal browser local storage
         document.getElementById('apiKey').value = localStorage.getItem('steam_key') || '';
 
         async function fetchData() {
             const key = document.getElementById('apiKey').value;
             const appId = document.getElementById('appId').value;
-            if(!key || !appId) return alert("Please enter both API Key and AppID");
+            const btn = document.getElementById('btnText');
             
+            if(!key || !appId) return alert("Enter Key and AppID");
             localStorage.setItem('steam_key', key);
             
-            // Note: Using a public CORS proxy because Steam blocks direct browser requests
-            const proxy = "https://cors-anywhere.herokuapp.com/";
-            
+            btn.innerText = "Fetching...";
+            btn.classList.add('loading');
+
+            // Using CorsProxy.io - simpler than cors-anywhere
+            const proxy = "https://corsproxy.io/?";
+
             try {
-                // 1. Fetch Store Details (Price, Reviews, Image, Tags)
-                // We use Steam's public storefront API
-                const storeRes = await fetch(`${proxy}https://store.steampowered.com/api/appdetails?appids=${appId}`);
-                const storeData = await storeRes.json();
-                const game = storeData[appId].data;
+                // 1. App Details (Price, Tags, Image)
+                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`;
+                const storeRes = await fetch(storeUrl);
+                const storeJson = await storeRes.json();
+                
+                if (!storeJson[appId].success) throw new Error("Game not found");
+                const game = storeJson[appId].data;
 
-                // 2. Fetch Live Players (Official API)
-                const playerRes = await fetch(`${proxy}https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`);
-                const playerData = await playerRes.json();
+                // 2. Review Data (Exact count and sentiment)
+                const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=0`)}`;
+                const reviewRes = await fetch(reviewUrl);
+                const reviewJson = await reviewRes.json();
 
-                updateUI(game, playerData.response.player_count);
+                // 3. Live Players
+                const playerUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`)}`;
+                const playerRes = await fetch(playerUrl);
+                const playerJson = await playerRes.json();
+
+                updateUI(game, reviewJson.query_summary, playerJson.response.player_count);
             } catch (err) {
                 console.error(err);
-                alert("Error fetching data. Ensure you have unlocked the CORS Proxy at https://cors-anywhere.herokuapp.com/test");
+                alert("Error: Likely a CORS block. Try a different AppID or check your API key.");
+            } finally {
+                btn.innerText = "Analyze Game";
+                btn.classList.remove('loading');
             }
         }
 
-        function updateUI(game, players) {
+        function updateUI(game, reviews, players) {
             document.getElementById('gameCard').classList.remove('hidden');
             document.getElementById('gameTitle').innerText = game.name;
-            document.getElementById('gameDev').innerText = game.developers.join(', ');
+            document.getElementById('gameDev').innerText = game.developers ? game.developers.join(', ') : "Unknown Dev";
             document.getElementById('gameImg').src = game.header_image;
-            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : game.price_overview.final_formatted;
+            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : (game.price_overview ? game.price_overview.final_formatted : "N/A");
+            
             document.getElementById('livePlayers').innerText = players.toLocaleString();
+            document.getElementById('totalReviews').innerText = reviews.total_reviews.toLocaleString();
 
-            // We estimate reviews because appdetails doesn't give a total count easily 
-            // Better developers use "https://store.steampowered.com/appreviews/${appId}?json=1"
-            // For this tool, we'll assume a dummy logic for demonstration or pull from game.recommendations
-            const reviewCount = game.recommendations ? game.recommendations.total : 0;
-            document.getElementById('totalReviews').innerText = reviewCount.toLocaleString();
-
-            // Boxleiter Math
-            const price = game.is_free ? 0 : (game.price_overview.final / 100);
-            const lowRev = reviewCount * 30 * price;
-            const highRev = reviewCount * 60 * price;
-            document.getElementById('revLow').innerText = "$" + Math.floor(lowRev).toLocaleString();
-            document.getElementById('revHigh').innerText = "$" + Math.floor(highRev).toLocaleString();
+            // Revenue Math (Boxleiter)
+            const price = game.is_free ? 0 : (game.price_overview ? game.price_overview.final / 100 : 0);
+            const revLow = reviews.total_reviews * 30 * price;
+            const revHigh = reviews.total_reviews * 60 * price;
+            
+            document.getElementById('revLow').innerText = "$" + Math.floor(revLow).toLocaleString();
+            document.getElementById('revHigh').innerText = "$" + Math.floor(revHigh).toLocaleString();
 
             // Tags
             const tagBox = document.getElementById('tagContainer');
             tagBox.innerHTML = '';
-            game.genres.forEach(g => {
+            const categories = game.genres || [];
+            categories.forEach(cat => {
                 const span = document.createElement('span');
-                span.className = "px-3 py-1 bg-slate-800 rounded-full text-xs text-cyan-300 border border-slate-600";
-                span.innerText = g.description;
+                span.className = "px-3 py-1 bg-slate-800 rounded text-xs text-cyan-400 border border-slate-700";
+                span.innerText = cat.description;
                 tagBox.appendChild(span);
             });
 
-            // Update Chart
-            updateChart(reviewCount);
-        }
-
-        function updateChart(reviews) {
+            // Chart
             const ctx = document.getElementById('sentimentChart').getContext('2d');
             if(sentimentChart) sentimentChart.destroy();
-            
             sentimentChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Positive (Estimated)', 'Negative (Estimated)'],
+                    labels: ['Positive', 'Negative'],
                     datasets: [{
-                        data: [reviews * 0.85, reviews * 0.15],
+                        data: [reviews.total_positive, reviews.total_negative],
                         backgroundColor: ['#2dd4bf', '#f43f5e'],
-                        borderWidth: 0
+                        borderColor: '#1e293b',
+                        borderWidth: 4
                     }]
                 },
                 options: {
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
                 }
             });
         }
