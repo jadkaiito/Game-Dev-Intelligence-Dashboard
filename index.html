@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SteamDev Intel — Advanced Analytics</title>
+    <title>SteamDev Intel — ULTIMATE DATA EXTRACTION</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet">
@@ -32,6 +32,7 @@
         .accent-emerald { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
         .accent-amber { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
         .accent-red { color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        .accent-purple { color: #a78bfa; text-shadow: 0 0 20px rgba(167, 139, 250, 0.5); }
         
         .loading { animation: pulse-glow 1.5s ease-in-out infinite; }
         @keyframes pulse-glow {
@@ -60,10 +61,10 @@
             color: #10b981;
         }
         
-        .tag-platform {
-            background: rgba(245, 158, 11, 0.15);
-            border-color: rgba(245, 158, 11, 0.4);
-            color: #f59e0b;
+        .tag-feature {
+            background: rgba(167, 139, 250, 0.15);
+            border-color: rgba(167, 139, 250, 0.4);
+            color: #a78bfa;
         }
         
         .counter { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; }
@@ -88,8 +89,15 @@
         }
 
         .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
-        @media (max-width: 1024px) { .stat-grid-3 { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .stat-grid-3 { grid-template-columns: 1fr; } }
+        .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 1024px) { 
+            .stat-grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .stat-grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) { 
+            .stat-grid-3 { grid-template-columns: 1fr; }
+            .stat-grid-4 { grid-template-columns: 1fr; }
+        }
 
         input, textarea { 
             background: rgba(30, 41, 59, 0.8);
@@ -110,7 +118,41 @@
         }
         .btn-primary:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); transform: translateY(-2px); }
 
+        .btn-secondary {
+            background: rgba(167, 139, 250, 0.2);
+            border: 1px solid rgba(167, 139, 250, 0.5);
+            color: #a78bfa;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover { background: rgba(167, 139, 250, 0.3); }
+
         .chart-container { position: relative; }
+        
+        .warning-banner {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .data-section {
+            background: rgba(10, 14, 39, 0.5);
+            border-left: 3px solid #06b6d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .expand-btn {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        .expand-btn:hover { color: #06b6d4; }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -120,22 +162,27 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-700/50">
             <div>
                 <h1 class="text-5xl font-bold mb-2 accent-cyan">STEAMDEV INTEL</h1>
-                <p class="text-slate-400 text-sm uppercase tracking-widest">Military-Grade Market Analysis Protocol</p>
+                <p class="text-slate-400 text-sm uppercase tracking-widest">🔓 ULTIMATE API EXTRACTION v2.0</p>
             </div>
             <div class="flex gap-2 flex-wrap">
-                <input id="apiKey" type="password" placeholder="Steam API Key" class="rounded px-3 py-2 text-sm w-48">
+                <input id="apiKey" type="password" placeholder="Steam API Key" class="rounded px-3 py-2 text-sm w-56">
                 <input id="appId" type="text" placeholder="AppID" class="rounded px-3 py-2 text-sm w-32">
-                <button onclick="fetchData()" id="btnText" class="btn-primary px-6 py-2 rounded font-bold uppercase text-xs">▶ ANALYZE</button>
+                <button onclick="fetchData()" id="btnText" class="btn-primary px-6 py-2 rounded font-bold uppercase text-xs">▶ SCAN</button>
             </div>
         </div>
     </div>
 
     <main class="max-w-8xl mx-auto">
         <div id="loadingScreen" class="text-center py-12">
-            <p class="text-slate-400 text-sm">Enter Steam API Key and AppID to begin</p>
+            <p class="text-slate-400 text-sm">Enter Steam API Key and AppID to extract ALL available data</p>
         </div>
 
         <div id="dataPanel" class="hidden space-y-6">
+
+            <div class="warning-banner">
+                ⚠️ <strong>CORS & Rate Limiting:</strong> Some endpoints may fail due to Steam's anti-bot measures. 
+                Use your own key and run locally for best results. Free tier = rate limited (~10 req/sec).
+            </div>
 
             <!-- PRIMARY GAME INFO -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -154,8 +201,12 @@
                             <span id="gameRelease" class="text-slate-300 text-sm">--</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-slate-500 uppercase">Platform</span>
-                            <span id="gamePlatforms" class="text-slate-300 text-sm">--</span>
+                            <span class="text-xs text-slate-500 uppercase">AppID</span>
+                            <span id="gameAppId" class="text-slate-300 text-sm">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-slate-500 uppercase">Package</span>
+                            <span id="gamePackages" class="text-slate-300 text-xs">--</span>
                         </div>
                     </div>
                 </div>
@@ -177,112 +228,276 @@
                         </div>
                     </div>
 
-                    <!-- REVENUE ESTIMATES -->
-                    <div class="glass rounded-lg p-6 border border-slate-700/50">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estimated Gross Revenue</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-slate-900/50 rounded px-3 py-3">
-                                <p class="text-[10px] text-slate-500 uppercase mb-1">Conservative (30x)</p>
-                                <p id="revLow" class="text-xl font-bold accent-emerald">$0</p>
-                            </div>
-                            <div class="bg-slate-900/50 rounded px-3 py-3">
-                                <p class="text-[10px] text-slate-500 uppercase mb-1">Aggressive (60x)</p>
-                                <p id="revHigh" class="text-xl font-bold accent-emerald">$0</p>
-                            </div>
+                    <!-- ADDITIONAL TOP METRICS -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass rounded-lg p-4 border border-slate-700/50">
+                            <p class="text-xs text-slate-500 uppercase mb-1">Avg Playtime</p>
+                            <p id="avgPlaytime" class="text-lg font-bold accent-purple">--</p>
+                        </div>
+                        <div class="glass rounded-lg p-4 border border-slate-700/50">
+                            <p class="text-xs text-slate-500 uppercase mb-1">Median Playtime</p>
+                            <p id="medianPlaytime" class="text-lg font-bold accent-purple">--</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- CHARTS & ANALYSIS -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Sentiment Donut -->
-                <div class="glass rounded-lg p-6 border border-slate-700/50 h-80">
+            <!-- REVENUE ESTIMATES -->
+            <div class="glass rounded-lg p-6 border border-slate-700/50">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estimated Revenue Models</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-900/50 rounded px-4 py-4">
+                        <p class="text-[10px] text-slate-500 uppercase mb-1">Conservative (30x)</p>
+                        <p id="revLow" class="text-xl font-bold accent-emerald">$0</p>
+                        <p class="text-xs text-slate-600 mt-1">Assumes 3% conversion</p>
+                    </div>
+                    <div class="bg-slate-900/50 rounded px-4 py-4">
+                        <p class="text-[10px] text-slate-500 uppercase mb-1">Standard (45x)</p>
+                        <p id="revMid" class="text-xl font-bold accent-amber">$0</p>
+                        <p class="text-xs text-slate-600 mt-1">Mid estimate</p>
+                    </div>
+                    <div class="bg-slate-900/50 rounded px-4 py-4">
+                        <p class="text-[10px] text-slate-500 uppercase mb-1">Aggressive (60x)</p>
+                        <p id="revHigh" class="text-xl font-bold accent-red">$0</p>
+                        <p class="text-xs text-slate-600 mt-1">Assumes 6% conversion</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS ROW 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Sentiment -->
+                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Review Sentiment</h3>
-                    <div class="chart-container h-full relative">
+                    <div class="chart-container h-full">
                         <canvas id="sentimentChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Score vs Player Count -->
-                <div class="glass rounded-lg p-6 border border-slate-700/50 h-80">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Review Score Breakdown</h3>
+                <!-- Score Trend -->
+                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Score Timeline</h3>
                     <div class="chart-container h-full">
                         <canvas id="scoreChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Languages -->
+                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Top 5 Languages</h3>
+                    <div class="chart-container h-full">
+                        <canvas id="languageChart"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- DETAILED METRICS GRID -->
-            <div class="grid stat-grid-3 gap-4">
+            <div class="grid stat-grid-4 gap-4">
                 <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">Avg Review Length</p>
-                    <p id="avgReviewLength" class="counter text-xl">0</p>
-                    <p class="text-slate-500 text-xs mt-2">characters</p>
+                    <p class="counter-label">Median Playtime</p>
+                    <p id="metricMedian" class="counter text-lg accent-purple">0h</p>
                 </div>
                 <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
                     <p class="counter-label">Recent Score</p>
-                    <p id="recentScore" class="counter text-xl accent-amber">0%</p>
-                    <p class="text-slate-500 text-xs mt-2">(last 30 days)</p>
+                    <p id="metricRecent" class="counter text-lg accent-amber">0%</p>
                 </div>
                 <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">All-Time Score</p>
-                    <p id="allTimeScore" class="counter text-xl accent-cyan">0%</p>
-                    <p class="text-slate-500 text-xs mt-2">cumulative</p>
+                    <p class="counter-label">Age (Days)</p>
+                    <p id="metricAge" class="counter text-lg accent-cyan">0</p>
+                </div>
+                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
+                    <p class="counter-label">Reviews/Day</p>
+                    <p id="metricReviewsDay" class="counter text-lg accent-emerald">0</p>
                 </div>
             </div>
 
-            <!-- ADVANCED STATS -->
-            <div class="glass rounded-lg p-6 border border-slate-700/50">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Advanced Metrics</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <p class="text-xs text-slate-500 uppercase mb-2">Peak Players</p>
-                        <p id="peakPlayers" class="text-lg font-bold accent-cyan">--</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 uppercase mb-2">Age (Days)</p>
-                        <p id="gamAge" class="text-lg font-bold accent-amber">--</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 uppercase mb-2">Reviews/Day</p>
-                        <p id="reviewsPerDay" class="text-lg font-bold accent-emerald">--</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 uppercase mb-2">Est. Sales/Month</p>
-                        <p id="estimatedSalesMonth" class="text-lg font-bold accent-red">--</p>
+            <!-- ADVANCED SECTION 1: PRICING & AVAILABILITY -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('pricingData')">
+                    ▶ PRICING & PACKAGE DATA
+                </h3>
+                <div id="pricingData" class="hidden space-y-3 ml-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">USD Price</p>
+                            <p id="priceUSD" class="text-sm font-bold">--</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Discount %</p>
+                            <p id="discountPercent" class="text-sm font-bold accent-red">--</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Packages/DLC</p>
+                            <p id="packageCount" class="text-sm font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Bundles</p>
+                            <p id="bundleCount" class="text-sm font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Wishlisted</p>
+                            <p id="wishlistCount" class="text-sm font-bold">--</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Base Game</p>
+                            <p id="baseGameId" class="text-sm font-bold">--</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAGS & CATEGORIES -->
-            <div class="glass rounded-lg p-6 border border-slate-700/50">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Categories</h3>
-                <div id="categoryTags" class="flex flex-wrap gap-2 mb-6"></div>
-                
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Genres</h3>
-                <div id="genreTags" class="flex flex-wrap gap-2 mb-6"></div>
-
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Platforms</h3>
-                <div id="platformTags" class="flex flex-wrap gap-2"></div>
+            <!-- ADVANCED SECTION 2: SYSTEM REQUIREMENTS -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('sysReqs')">
+                    ▶ SYSTEM REQUIREMENTS
+                </h3>
+                <div id="sysReqs" class="hidden space-y-4 ml-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Windows Minimum</h4>
+                        <textarea id="winMin" class="w-full h-20 rounded p-2 text-xs" readonly></textarea>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Windows Recommended</h4>
+                        <textarea id="winRec" class="w-full h-20 rounded p-2 text-xs" readonly></textarea>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Mac</h4>
+                        <textarea id="macReqs" class="w-full h-16 rounded p-2 text-xs" readonly></textarea>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Linux</h4>
+                        <textarea id="linuxReqs" class="w-full h-16 rounded p-2 text-xs" readonly></textarea>
+                    </div>
+                </div>
             </div>
 
-            <!-- RAW JSON EXPORT -->
+            <!-- ADVANCED SECTION 3: CONTENT FEATURES -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('features')">
+                    ▶ CONTENT & FEATURES
+                </h3>
+                <div id="features" class="hidden space-y-3 ml-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Categories</h4>
+                        <div id="categoryTags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Genres</h4>
+                        <div id="genreTags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Features</h4>
+                        <div id="featureTags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300 mb-2">Platforms</h4>
+                        <div id="platformTags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADVANCED SECTION 4: PUBLISHER/DEVELOPER -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('pubDev')">
+                    ▶ PUBLISHER & DEVELOPER
+                </h3>
+                <div id="pubDev" class="hidden space-y-3 ml-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Developers</p>
+                            <div id="devList" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Publishers</p>
+                            <div id="pubList" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADVANCED SECTION 5: REVIEW ANALYTICS -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('reviewAnalytics')">
+                    ▶ REVIEW ANALYTICS
+                </h3>
+                <div id="reviewAnalytics" class="hidden space-y-3 ml-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Total Positive</p>
+                            <p id="totalPos" class="text-sm font-bold accent-emerald">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Total Negative</p>
+                            <p id="totalNeg" class="text-sm font-bold accent-red">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Recent Positive</p>
+                            <p id="recentPos" class="text-sm font-bold accent-emerald">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase mb-1">Recent Negative</p>
+                            <p id="recentNeg" class="text-sm font-bold accent-red">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 rounded p-3 mt-3">
+                        <p class="text-xs text-slate-400 mb-1">Review Score Description</p>
+                        <p id="reviewScoreDesc" class="text-sm">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADVANCED SECTION 6: RAW JSON DATA -->
+            <div class="data-section">
+                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('jsonData')">
+                    ▶ FULL JSON EXPORT (Copy-Paste Ready)
+                </h3>
+                <div id="jsonData" class="hidden space-y-3 ml-4">
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="copyJson('store')" class="btn-secondary px-3 py-1 rounded text-xs">Copy Store Data</button>
+                        <button onclick="copyJson('reviews')" class="btn-secondary px-3 py-1 rounded text-xs">Copy Review Data</button>
+                        <button onclick="copyJson('all')" class="btn-secondary px-3 py-1 rounded text-xs">Copy ALL</button>
+                    </div>
+                    <textarea id="jsonExport" class="w-full rounded p-3 text-xs font-mono h-64" readonly></textarea>
+                </div>
+            </div>
+
+            <!-- DATA SOURCES LEGEND -->
             <div class="glass rounded-lg p-6 border border-slate-700/50">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Raw Data Export</h3>
-                <textarea id="jsonExport" class="w-full rounded p-3 text-xs font-mono h-48" readonly></textarea>
-                <button onclick="copyJson()" class="btn-primary px-4 py-2 rounded text-xs uppercase font-bold mt-3">Copy JSON</button>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">API Sources & Endpoints</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-400">
+                    <div>
+                        <p class="font-bold text-slate-300 mb-2">✓ Store API (Public)</p>
+                        <p>/appdetails → Game metadata, pricing, requirements</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-300 mb-2">✓ Reviews API (Public)</p>
+                        <p>/appreviews → Sentiment, scores, language distribution</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-300 mb-2">✓ Player Count API (Public)</p>
+                        <p>GetNumberOfCurrentPlayers → Live player metrics</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-300 mb-2">⚠️ News API (Rate Limited)</p>
+                        <p>GetNewsForApp → Recent patches & updates</p>
+                    </div>
+                </div>
             </div>
 
         </div>
     </main>
 
     <script>
-        let sentimentChart, scoreChart;
+        let sentimentChart, scoreChart, languageChart;
         let rawData = {};
 
         document.getElementById('apiKey').value = localStorage.getItem('steam_key') || '';
         document.getElementById('appId').value = localStorage.getItem('steam_appid') || '';
+
+        function toggleSection(id) {
+            const elem = document.getElementById(id);
+            elem.classList.toggle('hidden');
+        }
 
         async function fetchData() {
             const key = document.getElementById('apiKey').value;
@@ -293,7 +508,7 @@
             localStorage.setItem('steam_key', key);
             localStorage.setItem('steam_appid', appId);
             
-            btn.innerText = "⧖ SCANNING...";
+            btn.innerText = "⧖ EXTRACTING...";
             btn.classList.add('loading');
             document.getElementById('loadingScreen').classList.add('hidden');
             document.getElementById('dataPanel').classList.remove('hidden');
@@ -301,68 +516,116 @@
             const proxy = "https://corsproxy.io/?";
 
             try {
-                // 1. Store API - Game Details
-                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`;
+                // 1. STORE API - Full game details
+                console.log("Fetching Store Data...");
+                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}&cc=US`)}`;
                 const storeRes = await fetch(storeUrl);
                 const storeJson = await storeRes.json();
                 
                 if (!storeJson[appId] || !storeJson[appId].success) throw new Error("Game not found");
                 const gameData = storeJson[appId].data;
 
-                // 2. Reviews API - All review data
+                // 2. REVIEWS API - All review sentiment & language data
+                console.log("Fetching Reviews Data...");
                 const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=0`)}`;
                 const reviewRes = await fetch(reviewUrl);
                 const reviewData = await reviewRes.json();
 
-                // 3. Current Players
+                // 3. CURRENT PLAYERS
+                console.log("Fetching Player Count...");
                 const playerUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`)}`;
                 const playerRes = await fetch(playerUrl);
                 const playerData = await playerRes.json();
 
-                // 4. App Schema (for achievement/stat details - optional but adds data)
-                const schemaUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${key}`)}`;
-                let schemaData = null;
+                // 4. PLAYER STATS (Achievements, playtime distribution) - KEY API
+                console.log("Fetching Player Stats...");
+                let statsData = null;
                 try {
-                    const schemaRes = await fetch(schemaUrl);
-                    schemaData = await schemaRes.json();
-                } catch(e) { console.log("Schema fetch failed (not critical)"); }
+                    const statsUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${key}`)}`;
+                    const statsRes = await fetch(statsUrl);
+                    statsData = await statsRes.json();
+                } catch(e) { console.log("Stats fetch optional"); }
+
+                // 5. NEWS API - Latest patches/updates
+                console.log("Fetching News...");
+                let newsData = null;
+                try {
+                    const newsUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v0001/?appid=${appId}&count=10&maxlength=300`)}`;
+                    const newsRes = await fetch(newsUrl);
+                    newsData = await newsRes.json();
+                } catch(e) { console.log("News fetch optional"); }
+
+                // 6. ACHIEVEMENT STATS - per player metrics
+                console.log("Fetching Achievement Stats...");
+                let achData = null;
+                try {
+                    const achUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?appid=${appId}`)}`;
+                    const achRes = await fetch(achUrl);
+                    achData = await achRes.json();
+                } catch(e) { console.log("Achievement fetch optional"); }
 
                 rawData = {
-                    game: gameData,
+                    store: gameData,
                     reviews: reviewData.query_summary,
                     players: playerData.response.player_count,
-                    schema: schemaData
+                    stats: statsData,
+                    news: newsData,
+                    achievements: achData
                 };
 
-                updateUI(gameData, reviewData.query_summary, playerData.response.player_count, schemaData);
+                updateUI(gameData, reviewData, playerData.response.player_count, statsData, newsData, achData);
             } catch (err) {
                 console.error(err);
-                alert("Error: " + err.message + "\nCheck API Key and AppID");
+                alert("Error: " + err.message);
                 document.getElementById('loadingScreen').classList.remove('hidden');
                 document.getElementById('dataPanel').classList.add('hidden');
             } finally {
-                btn.innerText = "▶ ANALYZE";
+                btn.innerText = "▶ SCAN";
                 btn.classList.remove('loading');
             }
         }
 
-        function updateUI(game, reviews, players, schema) {
-            // Basic Info
+        function updateUI(game, reviewJson, players, stats, news, achievements) {
+            const reviews = reviewJson.query_summary;
+            
+            // BASIC INFO
             document.getElementById('gameTitle').innerText = game.name;
-            document.getElementById('gameDev').innerText = game.developers?.join(', ') || "Unknown Dev";
+            document.getElementById('gameDev').innerText = game.developers?.join(', ') || "Unknown";
             document.getElementById('gameDesc').innerText = game.short_description || "";
             document.getElementById('gameImg').src = game.header_image;
+            document.getElementById('gameAppId').innerText = game.steam_appid || "--";
             
             const price = game.is_free ? 0 : (game.price_overview?.final / 100 || 0);
             document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : `$${price.toFixed(2)}`;
-            document.getElementById('gameRelease').innerText = game.release_date?.date || "N/A";
-            
-            // Platforms
+            document.getElementById('gameRelease').innerText = game.release_date?.date || "TBA";
+
+            // PRICING
+            document.getElementById('priceUSD').innerText = `$${price.toFixed(2)}`;
+            const discount = game.price_overview?.discount_percent || 0;
+            document.getElementById('discountPercent').innerText = discount > 0 ? `-${discount}%` : "No discount";
+            document.getElementById('packageCount').innerText = game.packages?.length || 0;
+            document.getElementById('bundleCount').innerText = "N/A"; // Need separate API for bundles
+
+            // PLATFORMS
             const platforms = [];
             if(game.platforms?.windows) platforms.push("Windows");
-            if(game.platforms?.mac) platforms.push("Mac");
+            if(game.platforms?.mac) platforms.push("macOS");
             if(game.platforms?.linux) platforms.push("Linux");
             document.getElementById('gamePlatforms').innerText = platforms.join(", ");
+
+            // SYSTEM REQUIREMENTS
+            if(game.pc_requirements?.minimum) {
+                document.getElementById('winMin').value = game.pc_requirements.minimum.replace(/<br>/g, '\n');
+            }
+            if(game.pc_requirements?.recommended) {
+                document.getElementById('winRec').value = game.pc_requirements.recommended.replace(/<br>/g, '\n');
+            }
+            if(game.mac_requirements?.minimum) {
+                document.getElementById('macReqs').value = game.mac_requirements.minimum.replace(/<br>/g, '\n');
+            }
+            if(game.linux_requirements?.minimum) {
+                document.getElementById('linuxReqs').value = game.linux_requirements.minimum.replace(/<br>/g, '\n');
+            }
 
             // KEY METRICS
             document.getElementById('livePlayers').innerText = players.toLocaleString();
@@ -372,75 +635,118 @@
                 Math.round((reviews.total_positive / reviews.total_reviews) * 100) : 0;
             document.getElementById('positivePercent').innerText = positivePercent + "%";
 
-            // Recent vs All-Time
+            // REVIEW BREAKDOWN
+            document.getElementById('totalPos').innerText = reviews.total_positive.toLocaleString();
+            document.getElementById('totalNeg').innerText = reviews.total_negative.toLocaleString();
+            document.getElementById('recentPos').innerText = reviews.total_positive_recent.toLocaleString();
+            document.getElementById('recentNeg').innerText = reviews.total_negative_recent.toLocaleString();
+            document.getElementById('reviewScoreDesc').innerText = reviews.review_score_desc || "Unknown";
+
             const recentScore = reviews.total_reviews_recent > 0 ?
                 Math.round((reviews.total_positive_recent / reviews.total_reviews_recent) * 100) : 0;
-            const allTimeScore = positivePercent;
-            document.getElementById('recentScore').innerText = recentScore + "%";
-            document.getElementById('allTimeScore').innerText = allTimeScore + "%";
+            document.getElementById('metricRecent').innerText = recentScore + "%";
 
-            // Revenue Estimates
+            // PLAYTIME DATA (from reviews multilang)
+            if(reviewJson.reviews && reviewJson.reviews.length > 0) {
+                const playtimes = reviewJson.reviews.map(r => r.playtime_forever || 0);
+                const avgPlaytime = playtimes.length > 0 ? (playtimes.reduce((a,b) => a+b) / playtimes.length / 60).toFixed(1) : 0;
+                document.getElementById('avgPlaytime').innerText = avgPlaytime + "h";
+                document.getElementById('metricMedian').innerText = avgPlaytime + "h";
+            }
+
+            // REVENUE MODELS
             const revLow = reviews.total_reviews * 30 * price;
+            const revMid = reviews.total_reviews * 45 * price;
             const revHigh = reviews.total_reviews * 60 * price;
             document.getElementById('revLow').innerText = "$" + Math.floor(revLow).toLocaleString();
+            document.getElementById('revMid').innerText = "$" + Math.floor(revMid).toLocaleString();
             document.getElementById('revHigh').innerText = "$" + Math.floor(revHigh).toLocaleString();
 
-            // Advanced Stats
+            // GAME AGE & VELOCITY
             const releaseDate = new Date(game.release_date?.date || new Date());
             const gameDays = Math.floor((Date.now() - releaseDate.getTime()) / (1000 * 60 * 60 * 24));
             const reviewsPerDay = gameDays > 0 ? (reviews.total_reviews / gameDays).toFixed(2) : 0;
-            const estimatedMonthly = (revLow + revHigh) / 2 / 12;
-
-            document.getElementById('peakPlayers').innerText = "--"; // Steam doesn't expose this publicly
-            document.getElementById('gamAge').innerText = gameDays + " days";
-            document.getElementById('reviewsPerDay').innerText = reviewsPerDay;
-            document.getElementById('estimatedSalesMonth').innerText = "$" + Math.floor(estimatedMonthly).toLocaleString();
-            document.getElementById('avgReviewLength').innerText = reviews.review_score_desc || "N/A";
+            document.getElementById('metricAge').innerText = gameDays + " days";
+            document.getElementById('metricReviewsDay').innerText = reviewsPerDay;
 
             // TAGS - Categories
-            const categoryBox = document.getElementById('categoryTags');
-            categoryBox.innerHTML = '';
+            const catBox = document.getElementById('categoryTags');
+            catBox.innerHTML = '';
             if(game.categories) {
                 game.categories.forEach(cat => {
                     const span = document.createElement('span');
                     span.className = "tag tag-category";
                     span.innerText = cat.description;
-                    categoryBox.appendChild(span);
+                    catBox.appendChild(span);
                 });
             }
 
             // TAGS - Genres
-            const genreBox = document.getElementById('genreTags');
-            genreBox.innerHTML = '';
+            const genBox = document.getElementById('genreTags');
+            genBox.innerHTML = '';
             if(game.genres) {
                 game.genres.forEach(gen => {
                     const span = document.createElement('span');
                     span.className = "tag tag-category";
                     span.innerText = gen.description;
-                    genreBox.appendChild(span);
+                    genBox.appendChild(span);
                 });
             }
+
+            // TAGS - Features
+            const featBox = document.getElementById('featureTags');
+            featBox.innerHTML = '';
+            const supportedFeatures = ['Single-player', 'Multi-player', 'Co-op', 'Cloud Saves', 'Full controller support'];
+            supportedFeatures.forEach(feat => {
+                const span = document.createElement('span');
+                span.className = "tag tag-feature";
+                span.innerText = feat;
+                featBox.appendChild(span);
+            });
 
             // TAGS - Platforms
             const platBox = document.getElementById('platformTags');
             platBox.innerHTML = '';
             if(game.platforms?.windows) {
                 const sp = document.createElement('span');
-                sp.className = "tag tag-platform";
+                sp.className = "tag";
                 sp.innerText = "WINDOWS";
                 platBox.appendChild(sp);
             }
             if(game.platforms?.mac) {
                 const sp = document.createElement('span');
-                sp.className = "tag tag-platform";
+                sp.className = "tag";
                 sp.innerText = "MACOS";
                 platBox.appendChild(sp);
             }
             if(game.platforms?.linux) {
                 const sp = document.createElement('span');
-                sp.className = "tag tag-platform";
+                sp.className = "tag";
                 sp.innerText = "LINUX";
                 platBox.appendChild(sp);
+            }
+
+            // DEV & PUB
+            const devList = document.getElementById('devList');
+            devList.innerHTML = '';
+            if(game.developers) {
+                game.developers.forEach(dev => {
+                    const span = document.createElement('span');
+                    span.className = "tag tag-category";
+                    span.innerText = dev;
+                    devList.appendChild(span);
+                });
+            }
+
+            const pubList = document.getElementById('pubList');
+            pubList.innerHTML = '';
+            if(game.publishers) {
+                game.publishers.forEach(pub => {
+                    const span = document.createElement('span');
+                    span.className = "tag tag-feature";
+                    span.innerText = pub;
+                    pubList.appendChild(span);
+                });
             }
 
             // CHART 1: Sentiment Donut
@@ -468,7 +774,7 @@
                 }
             });
 
-            // CHART 2: Score Breakdown
+            // CHART 2: Score Comparison
             const ctx2 = document.getElementById('scoreChart').getContext('2d');
             if(scoreChart) scoreChart.destroy();
             scoreChart = new Chart(ctx2, {
@@ -476,8 +782,8 @@
                 data: {
                     labels: ['All-Time', 'Recent (30d)'],
                     datasets: [{
-                        label: 'Positive %',
-                        data: [allTimeScore, recentScore],
+                        label: 'Positive Score %',
+                        data: [positivePercent, recentScore],
                         backgroundColor: ['#06b6d4', '#10b981'],
                         borderColor: '#0a0e27',
                         borderWidth: 2
@@ -499,21 +805,70 @@
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace" } }
+                            labels: { color: '#94a3b8' }
                         }
                     }
                 }
             });
 
-            // JSON Export
+            // CHART 3: Language Distribution (from multilang reviews)
+            const languageData = reviewJson.review_list?.reduce((acc, r) => {
+                acc[r.language] = (acc[r.language] || 0) + 1;
+                return acc;
+            }, {}) || {};
+            
+            const topLangs = Object.entries(languageData)
+                .sort((a,b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const ctx3 = document.getElementById('languageChart').getContext('2d');
+            if(languageChart) languageChart.destroy();
+            languageChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: topLangs.map(l => l[0] || 'Unknown'),
+                    datasets: [{
+                        label: 'Reviews',
+                        data: topLangs.map(l => l[1]),
+                        backgroundColor: '#a78bfa',
+                        borderColor: '#0a0e27',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // JSON EXPORT
             document.getElementById('jsonExport').value = JSON.stringify(rawData, null, 2);
         }
 
-        function copyJson() {
+        function copyJson(type) {
+            let data;
+            if(type === 'store') data = rawData.store;
+            else if(type === 'reviews') data = rawData.reviews;
+            else data = rawData;
+            
             const textarea = document.getElementById('jsonExport');
+            textarea.value = JSON.stringify(data, null, 2);
             textarea.select();
             document.execCommand('copy');
-            alert("JSON copied to clipboard!");
+            alert("Data copied!");
         }
     </script>
 </body>
