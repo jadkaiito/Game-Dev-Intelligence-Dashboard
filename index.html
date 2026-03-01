@@ -3,872 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SteamDev Intel — ULTIMATE DATA EXTRACTION</title>
+    <title>Steam Dev Intel Dashboard - Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'JetBrains Mono', monospace; }
-        h1, h2, h3 { font-family: 'Syne', sans-serif; letter-spacing: -1px; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
         
-        body { 
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1427 100%);
-            color: #f1f5f9;
-            overflow-x: hidden;
-        }
-        
-        .glass { 
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.15);
-            backdrop-filter: blur(10px);
-        }
-        
-        .glass-hot {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        
-        .accent-cyan { color: #06b6d4; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
-        .accent-emerald { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
-        .accent-amber { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
-        .accent-red { color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
-        .accent-purple { color: #a78bfa; text-shadow: 0 0 20px rgba(167, 139, 250, 0.5); }
-        
-        .loading { animation: pulse-glow 1.5s ease-in-out infinite; }
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .metric-box { transition: all 0.3s ease; }
-        .metric-box:hover { transform: translateY(-2px); border-color: rgba(6, 182, 212, 0.6); }
-        
-        .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        
-        .tag { 
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        
-        .tag-category {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.4);
-            color: #10b981;
-        }
-        
-        .tag-feature {
-            background: rgba(167, 139, 250, 0.15);
-            border-color: rgba(167, 139, 250, 0.4);
-            color: #a78bfa;
-        }
-        
-        .counter { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; }
-        .counter-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
-        
-        .scanline { position: relative; }
-        .scanline::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0,0,0,0.15) 0px,
-                rgba(0,0,0,0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-        }
+        /* Custom scrollbars */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #1e293b; rounded: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 
-        .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
-        @media (max-width: 1024px) { 
-            .stat-grid-3 { grid-template-columns: repeat(2, 1fr); }
-            .stat-grid-4 { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 640px) { 
-            .stat-grid-3 { grid-template-columns: 1fr; }
-            .stat-grid-4 { grid-template-columns: 1fr; }
-        }
-
-        input, textarea { 
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            color: #f1f5f9;
-        }
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #06b6d4;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-            color: #0f172a;
-            font-weight: 700;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); transform: translateY(-2px); }
-
-        .btn-secondary {
-            background: rgba(167, 139, 250, 0.2);
-            border: 1px solid rgba(167, 139, 250, 0.5);
-            color: #a78bfa;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-secondary:hover { background: rgba(167, 139, 250, 0.3); }
-
-        .chart-container { position: relative; }
-        
-        .warning-banner {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: #f59e0b;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-        }
-
-        .data-section {
-            background: rgba(10, 14, 39, 0.5);
-            border-left: 3px solid #06b6d4;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .expand-btn {
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.3s ease;
-        }
-        .expand-btn:hover { color: #06b6d4; }
+        /* Accordion transition */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: slideDown 0.3s ease-in-out; }
+        @keyframes slideDown { 0% { opacity: 0; transform: translateY(-10px); } 100% { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="p-4 md:p-6">
+<body class="p-4 md:p-8">
 
-    <!-- HEADER -->
-    <div class="max-w-8xl mx-auto mb-8">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-700/50">
-            <div>
-                <h1 class="text-5xl font-bold mb-2 accent-cyan">STEAMDEV INTEL</h1>
-                <p class="text-slate-400 text-sm uppercase tracking-widest">🔓 ULTIMATE API EXTRACTION v2.0</p>
-            </div>
-            <div class="flex gap-2 flex-wrap">
-                <input id="apiKey" type="password" placeholder="Steam API Key" class="rounded px-3 py-2 text-sm w-56">
-                <input id="appId" type="text" placeholder="AppID" class="rounded px-3 py-2 text-sm w-32">
-                <button onclick="fetchData()" id="btnText" class="btn-primary px-6 py-2 rounded font-bold uppercase text-xs">▶ SCAN</button>
-            </div>
+    <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-cyan-400">SteamDev <span class="text-slate-500 text-xl font-light">Intel</span></h1>
+            <p class="text-slate-400 text-sm">Ultimate Market Research Tool</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <input id="apiKey" type="password" placeholder="Steam API Key" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-48 text-white focus:outline-none">
+            <input id="appId" type="text" placeholder="AppID (e.g. 105600)" class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:border-cyan-500 w-36 text-white focus:outline-none">
+            <button onclick="fetchData()" id="btnText" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded font-bold transition">Analyze Game</button>
         </div>
     </div>
 
-    <main class="max-w-8xl mx-auto">
-        <div id="loadingScreen" class="text-center py-12">
-            <p class="text-slate-400 text-sm">Enter Steam API Key and AppID to extract ALL available data</p>
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 hidden" id="mainDashboard">
+        
+        <div class="space-y-6 lg:col-span-1">
+            <div class="glass border border-slate-700 p-6 rounded-xl">
+                <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600 shadow-xl">
+                <h2 id="gameTitle" class="text-2xl font-bold text-white mb-2"></h2>
+                
+                <div class="space-y-2 mb-4">
+                    <p class="text-xs text-slate-400"><span class="font-bold text-slate-300">Developer:</span> <span id="gameDev"></span></p>
+                    <p class="text-xs text-slate-400"><span class="font-bold text-slate-300">Publisher:</span> <span id="gamePub"></span></p>
+                    <p class="text-xs text-slate-400"><span class="font-bold text-slate-300">Platforms:</span> <span id="gamePlatforms" class="text-cyan-400"></span></p>
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-700 mb-2">
+                    <span class="text-xs text-slate-400 uppercase">Current Price</span>
+                    <span id="gamePrice" class="text-green-400 font-bold">--</span>
+                </div>
+                
+                <div class="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-400 uppercase">Sentiment</span>
+                    <span id="reviewScoreDesc" class="font-bold text-sm text-right">--</span>
+                </div>
+            </div>
+
+            <div class="glass border border-slate-700 p-6 rounded-xl">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Gross Revenue Models</h3>
+                <div class="space-y-3">
+                    <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                        <p class="text-[10px] text-slate-400 mb-1 flex justify-between">Conservative <span class="text-slate-500">(20x)</span></p>
+                        <p id="revCons" class="text-xl font-bold text-emerald-600">$0</p>
+                    </div>
+                    <div class="bg-slate-800/80 p-3 rounded border border-slate-600">
+                        <p class="text-[10px] text-cyan-400 mb-1 flex justify-between">Standard <span class="text-slate-500">(35x)</span></p>
+                        <p id="revStd" class="text-2xl font-bold text-emerald-400">$0</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                        <p class="text-[10px] text-slate-400 mb-1 flex justify-between">Aggressive <span class="text-slate-500">(60x)</span></p>
+                        <p id="revAgg" class="text-xl font-bold text-emerald-500">$0</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="dataPanel" class="hidden space-y-6">
-
-            <div class="warning-banner">
-                ⚠️ <strong>CORS & Rate Limiting:</strong> Some endpoints may fail due to Steam's anti-bot measures. 
-                Use your own key and run locally for best results. Free tier = rate limited (~10 req/sec).
-            </div>
-
-            <!-- PRIMARY GAME INFO -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="glass rounded-lg p-6 border border-slate-700/50">
-                    <img id="gameImg" src="" class="w-full rounded-lg mb-4 border border-slate-600/50 shadow-lg">
-                    <h2 id="gameTitle" class="text-2xl font-bold text-white mb-2"></h2>
-                    <p id="gameDev" class="text-slate-400 text-sm mb-4"></p>
-                    <p id="gameDesc" class="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-3"></p>
-                    <div class="space-y-2 pt-4 border-t border-slate-700/30">
-                        <div class="flex justify-between">
-                            <span class="text-xs text-slate-500 uppercase">Price</span>
-                            <span id="gamePrice" class="text-emerald-400 font-bold">--</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-slate-500 uppercase">Release</span>
-                            <span id="gameRelease" class="text-slate-300 text-sm">--</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-slate-500 uppercase">AppID</span>
-                            <span id="gameAppId" class="text-slate-300 text-sm">--</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-slate-500 uppercase">Package</span>
-                            <span id="gamePackages" class="text-slate-300 text-xs">--</span>
-                        </div>
-                    </div>
+        <div class="lg:col-span-3 space-y-4">
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 md:col-span-1 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Release Date</p>
+                    <p id="releaseDate" class="text-lg font-bold text-white truncate">--</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 md:col-span-1 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Metacritic</p>
+                    <p id="metaScore" class="text-2xl font-black text-purple-400">N/A</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 md:col-span-1 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">DLC Count</p>
+                    <p id="dlcCount" class="text-2xl font-black text-pink-400">0</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 md:col-span-1 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Achievements</p>
+                    <p id="achCount" class="text-2xl font-black text-yellow-400">0</p>
                 </div>
 
-                <!-- KEY METRICS -->
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="grid stat-grid-3 gap-4">
-                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-emerald-500/30 scanline">
-                            <p class="counter-label accent-emerald">Live Players</p>
-                            <p id="livePlayers" class="counter accent-emerald">0</p>
-                        </div>
-                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-amber-500/30 scanline">
-                            <p class="counter-label accent-amber">Total Reviews</p>
-                            <p id="totalReviews" class="counter accent-amber">0</p>
-                        </div>
-                        <div class="glass glass-hot rounded-lg p-5 metric-box border border-cyan-500/30 scanline">
-                            <p class="counter-label accent-cyan">Positive %</p>
-                            <p id="positivePercent" class="counter accent-cyan">0%</p>
-                        </div>
-                    </div>
-
-                    <!-- ADDITIONAL TOP METRICS -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="glass rounded-lg p-4 border border-slate-700/50">
-                            <p class="text-xs text-slate-500 uppercase mb-1">Avg Playtime</p>
-                            <p id="avgPlaytime" class="text-lg font-bold accent-purple">--</p>
-                        </div>
-                        <div class="glass rounded-lg p-4 border border-slate-700/50">
-                            <p class="text-xs text-slate-500 uppercase mb-1">Median Playtime</p>
-                            <p id="medianPlaytime" class="text-lg font-bold accent-purple">--</p>
-                        </div>
-                    </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Live Players</p>
+                    <p id="livePlayers" class="text-3xl font-black text-cyan-400">0</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Total Reviews</p>
+                    <p id="totalReviews" class="text-3xl font-black text-amber-400">0</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">All-Time Pos</p>
+                    <p id="allTimePos" class="text-3xl font-black text-emerald-400">0%</p>
+                </div>
+                <div class="glass border border-slate-700 p-4 rounded-xl text-center col-span-2 lg:col-span-2">
+                    <p class="text-[10px] text-slate-500 uppercase mb-1">Recent Pos</p>
+                    <p id="recentPos" class="text-3xl font-black text-blue-400">0%</p>
                 </div>
             </div>
 
-            <!-- REVENUE ESTIMATES -->
-            <div class="glass rounded-lg p-6 border border-slate-700/50">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estimated Revenue Models</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-900/50 rounded px-4 py-4">
-                        <p class="text-[10px] text-slate-500 uppercase mb-1">Conservative (30x)</p>
-                        <p id="revLow" class="text-xl font-bold accent-emerald">$0</p>
-                        <p class="text-xs text-slate-600 mt-1">Assumes 3% conversion</p>
-                    </div>
-                    <div class="bg-slate-900/50 rounded px-4 py-4">
-                        <p class="text-[10px] text-slate-500 uppercase mb-1">Standard (45x)</p>
-                        <p id="revMid" class="text-xl font-bold accent-amber">$0</p>
-                        <p class="text-xs text-slate-600 mt-1">Mid estimate</p>
-                    </div>
-                    <div class="bg-slate-900/50 rounded px-4 py-4">
-                        <p class="text-[10px] text-slate-500 uppercase mb-1">Aggressive (60x)</p>
-                        <p id="revHigh" class="text-xl font-bold accent-red">$0</p>
-                        <p class="text-xs text-slate-600 mt-1">Assumes 6% conversion</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHARTS ROW 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Sentiment -->
-                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Review Sentiment</h3>
-                    <div class="chart-container h-full">
+            <details class="glass border border-slate-700 rounded-xl group" open>
+                <summary class="p-5 font-bold cursor-pointer text-slate-200 flex justify-between items-center outline-none">
+                    Review Analytics & Demographics
+                    <span class="text-cyan-500 group-open:rotate-180 transition-transform duration-300">▼</span>
+                </summary>
+                <div class="p-5 pt-0 border-t border-slate-700 mt-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="h-64">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase mb-2 text-center">Sentiment Breakdown</h3>
                         <canvas id="sentimentChart"></canvas>
                     </div>
-                </div>
-
-                <!-- Score Trend -->
-                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Score Timeline</h3>
-                    <div class="chart-container h-full">
-                        <canvas id="scoreChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Languages -->
-                <div class="glass rounded-lg p-6 border border-slate-700/50 h-72">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Top 5 Languages</h3>
-                    <div class="chart-container h-full">
+                    <div class="h-64">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase mb-2 text-center">Language Sample (Top 100 Recent)</h3>
                         <canvas id="languageChart"></canvas>
                     </div>
                 </div>
-            </div>
+                
+                <div class="p-5 bg-slate-800/50 border-t border-slate-700 flex justify-around text-center rounded-b-xl">
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase">Avg Playtime (Recent Reviewers)</p>
+                        <p id="avgPlaytime" class="text-xl font-bold text-white">0 hrs</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase">Direct Steam Purchase Ratio</p>
+                        <p id="steamPurchaseRatio" class="text-xl font-bold text-white">0%</p>
+                    </div>
+                </div>
+            </details>
 
-            <!-- DETAILED METRICS GRID -->
-            <div class="grid stat-grid-4 gap-4">
-                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">Median Playtime</p>
-                    <p id="metricMedian" class="counter text-lg accent-purple">0h</p>
+            <details class="glass border border-slate-700 rounded-xl group">
+                <summary class="p-5 font-bold cursor-pointer text-slate-200 flex justify-between items-center outline-none">
+                    Store Description & Screenshots
+                    <span class="text-cyan-500 group-open:rotate-180 transition-transform duration-300">▼</span>
+                </summary>
+                <div class="p-5 pt-0 border-t border-slate-700 mt-2">
+                    <div id="gameDescription" class="text-sm text-slate-300 mt-4 mb-6 leading-relaxed"></div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Media</h3>
+                    <div id="screenshotContainer" class="flex gap-4 overflow-x-auto pb-4 custom-scroll snap-x">
+                        </div>
                 </div>
-                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">Recent Score</p>
-                    <p id="metricRecent" class="counter text-lg accent-amber">0%</p>
-                </div>
-                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">Age (Days)</p>
-                    <p id="metricAge" class="counter text-lg accent-cyan">0</p>
-                </div>
-                <div class="glass rounded-lg p-4 metric-box border border-slate-700/50">
-                    <p class="counter-label">Reviews/Day</p>
-                    <p id="metricReviewsDay" class="counter text-lg accent-emerald">0</p>
-                </div>
-            </div>
+            </details>
 
-            <!-- ADVANCED SECTION 1: PRICING & AVAILABILITY -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('pricingData')">
-                    ▶ PRICING & PACKAGE DATA
-                </h3>
-                <div id="pricingData" class="hidden space-y-3 ml-4">
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">USD Price</p>
-                            <p id="priceUSD" class="text-sm font-bold">--</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Discount %</p>
-                            <p id="discountPercent" class="text-sm font-bold accent-red">--</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Packages/DLC</p>
-                            <p id="packageCount" class="text-sm font-bold">0</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Bundles</p>
-                            <p id="bundleCount" class="text-sm font-bold">0</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Wishlisted</p>
-                            <p id="wishlistCount" class="text-sm font-bold">--</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Base Game</p>
-                            <p id="baseGameId" class="text-sm font-bold">--</p>
-                        </div>
-                    </div>
+            <details class="glass border border-slate-700 rounded-xl group">
+                <summary class="p-5 font-bold cursor-pointer text-slate-200 flex justify-between items-center outline-none">
+                    Game Categories & Tags
+                    <span class="text-cyan-500 group-open:rotate-180 transition-transform duration-300">▼</span>
+                </summary>
+                <div class="p-5 pt-0 border-t border-slate-700 mt-2">
+                    <div id="tagContainer" class="flex flex-wrap gap-2 mt-4"></div>
                 </div>
-            </div>
+            </details>
 
-            <!-- ADVANCED SECTION 2: SYSTEM REQUIREMENTS -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('sysReqs')">
-                    ▶ SYSTEM REQUIREMENTS
-                </h3>
-                <div id="sysReqs" class="hidden space-y-4 ml-4">
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Windows Minimum</h4>
-                        <textarea id="winMin" class="w-full h-20 rounded p-2 text-xs" readonly></textarea>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Windows Recommended</h4>
-                        <textarea id="winRec" class="w-full h-20 rounded p-2 text-xs" readonly></textarea>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Mac</h4>
-                        <textarea id="macReqs" class="w-full h-16 rounded p-2 text-xs" readonly></textarea>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Linux</h4>
-                        <textarea id="linuxReqs" class="w-full h-16 rounded p-2 text-xs" readonly></textarea>
-                    </div>
+            <details class="glass border border-slate-700 rounded-xl group">
+                <summary class="p-5 font-bold cursor-pointer text-slate-200 flex justify-between items-center outline-none">
+                    System Requirements
+                    <span class="text-cyan-500 group-open:rotate-180 transition-transform duration-300">▼</span>
+                </summary>
+                <div class="p-5 pt-0 border-t border-slate-700 mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300">
+                    <div class="bg-slate-900/50 p-4 rounded mt-4 max-h-64 overflow-y-auto custom-scroll" id="sysMin"></div>
+                    <div class="bg-slate-900/50 p-4 rounded mt-4 max-h-64 overflow-y-auto custom-scroll" id="sysRec"></div>
                 </div>
-            </div>
-
-            <!-- ADVANCED SECTION 3: CONTENT FEATURES -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('features')">
-                    ▶ CONTENT & FEATURES
-                </h3>
-                <div id="features" class="hidden space-y-3 ml-4">
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Categories</h4>
-                        <div id="categoryTags" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Genres</h4>
-                        <div id="genreTags" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Features</h4>
-                        <div id="featureTags" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-300 mb-2">Platforms</h4>
-                        <div id="platformTags" class="flex flex-wrap gap-2"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ADVANCED SECTION 4: PUBLISHER/DEVELOPER -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('pubDev')">
-                    ▶ PUBLISHER & DEVELOPER
-                </h3>
-                <div id="pubDev" class="hidden space-y-3 ml-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Developers</p>
-                            <div id="devList" class="flex flex-wrap gap-2"></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Publishers</p>
-                            <div id="pubList" class="flex flex-wrap gap-2"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ADVANCED SECTION 5: REVIEW ANALYTICS -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('reviewAnalytics')">
-                    ▶ REVIEW ANALYTICS
-                </h3>
-                <div id="reviewAnalytics" class="hidden space-y-3 ml-4">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Total Positive</p>
-                            <p id="totalPos" class="text-sm font-bold accent-emerald">0</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Total Negative</p>
-                            <p id="totalNeg" class="text-sm font-bold accent-red">0</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Recent Positive</p>
-                            <p id="recentPos" class="text-sm font-bold accent-emerald">0</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase mb-1">Recent Negative</p>
-                            <p id="recentNeg" class="text-sm font-bold accent-red">0</p>
-                        </div>
-                    </div>
-                    <div class="bg-slate-900/50 rounded p-3 mt-3">
-                        <p class="text-xs text-slate-400 mb-1">Review Score Description</p>
-                        <p id="reviewScoreDesc" class="text-sm">--</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ADVANCED SECTION 6: RAW JSON DATA -->
-            <div class="data-section">
-                <h3 class="text-sm font-bold accent-cyan mb-4 expand-btn" onclick="toggleSection('jsonData')">
-                    ▶ FULL JSON EXPORT (Copy-Paste Ready)
-                </h3>
-                <div id="jsonData" class="hidden space-y-3 ml-4">
-                    <div class="flex gap-2 mb-3">
-                        <button onclick="copyJson('store')" class="btn-secondary px-3 py-1 rounded text-xs">Copy Store Data</button>
-                        <button onclick="copyJson('reviews')" class="btn-secondary px-3 py-1 rounded text-xs">Copy Review Data</button>
-                        <button onclick="copyJson('all')" class="btn-secondary px-3 py-1 rounded text-xs">Copy ALL</button>
-                    </div>
-                    <textarea id="jsonExport" class="w-full rounded p-3 text-xs font-mono h-64" readonly></textarea>
-                </div>
-            </div>
-
-            <!-- DATA SOURCES LEGEND -->
-            <div class="glass rounded-lg p-6 border border-slate-700/50">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">API Sources & Endpoints</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-400">
-                    <div>
-                        <p class="font-bold text-slate-300 mb-2">✓ Store API (Public)</p>
-                        <p>/appdetails → Game metadata, pricing, requirements</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-slate-300 mb-2">✓ Reviews API (Public)</p>
-                        <p>/appreviews → Sentiment, scores, language distribution</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-slate-300 mb-2">✓ Player Count API (Public)</p>
-                        <p>GetNumberOfCurrentPlayers → Live player metrics</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-slate-300 mb-2">⚠️ News API (Rate Limited)</p>
-                        <p>GetNewsForApp → Recent patches & updates</p>
-                    </div>
-                </div>
-            </div>
+            </details>
 
         </div>
     </main>
 
     <script>
-        let sentimentChart, scoreChart, languageChart;
-        let rawData = {};
-
+        let sentimentChart, languageChart;
         document.getElementById('apiKey').value = localStorage.getItem('steam_key') || '';
-        document.getElementById('appId').value = localStorage.getItem('steam_appid') || '';
-
-        function toggleSection(id) {
-            const elem = document.getElementById(id);
-            elem.classList.toggle('hidden');
-        }
 
         async function fetchData() {
             const key = document.getElementById('apiKey').value;
             const appId = document.getElementById('appId').value;
             const btn = document.getElementById('btnText');
             
-            if(!key || !appId) return alert("Enter API Key and AppID");
+            if(!key || !appId) return alert("Enter Key and AppID");
             localStorage.setItem('steam_key', key);
-            localStorage.setItem('steam_appid', appId);
             
-            btn.innerText = "⧖ EXTRACTING...";
+            btn.innerText = "Fetching Data...";
             btn.classList.add('loading');
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('dataPanel').classList.remove('hidden');
 
             const proxy = "https://corsproxy.io/?";
 
             try {
-                // 1. STORE API - Full game details
-                console.log("Fetching Store Data...");
-                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}&cc=US`)}`;
+                // 1. App Details
+                const storeUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/api/appdetails?appids=${appId}`)}`;
                 const storeRes = await fetch(storeUrl);
                 const storeJson = await storeRes.json();
-                
-                if (!storeJson[appId] || !storeJson[appId].success) throw new Error("Game not found");
-                const gameData = storeJson[appId].data;
+                if (!storeJson[appId].success) throw new Error("Game not found");
+                const game = storeJson[appId].data;
 
-                // 2. REVIEWS API - All review sentiment & language data
-                console.log("Fetching Reviews Data...");
-                const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=0`)}`;
+                // 2. Reviews Data (Sample 100 for deep stats)
+                const reviewUrl = `${proxy}${encodeURIComponent(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&num_per_page=100&filter=recent`)}`;
                 const reviewRes = await fetch(reviewUrl);
-                const reviewData = await reviewRes.json();
+                const reviewJson = await reviewRes.json();
 
-                // 3. CURRENT PLAYERS
-                console.log("Fetching Player Count...");
+                // 3. Live Players
                 const playerUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`)}`;
                 const playerRes = await fetch(playerUrl);
-                const playerData = await playerRes.json();
+                const playerJson = await playerRes.json();
 
-                // 4. PLAYER STATS (Achievements, playtime distribution) - KEY API
-                console.log("Fetching Player Stats...");
-                let statsData = null;
-                try {
-                    const statsUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${key}`)}`;
-                    const statsRes = await fetch(statsUrl);
-                    statsData = await statsRes.json();
-                } catch(e) { console.log("Stats fetch optional"); }
-
-                // 5. NEWS API - Latest patches/updates
-                console.log("Fetching News...");
-                let newsData = null;
-                try {
-                    const newsUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v0001/?appid=${appId}&count=10&maxlength=300`)}`;
-                    const newsRes = await fetch(newsUrl);
-                    newsData = await newsRes.json();
-                } catch(e) { console.log("News fetch optional"); }
-
-                // 6. ACHIEVEMENT STATS - per player metrics
-                console.log("Fetching Achievement Stats...");
-                let achData = null;
-                try {
-                    const achUrl = `${proxy}${encodeURIComponent(`https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?appid=${appId}`)}`;
-                    const achRes = await fetch(achUrl);
-                    achData = await achRes.json();
-                } catch(e) { console.log("Achievement fetch optional"); }
-
-                rawData = {
-                    store: gameData,
-                    reviews: reviewData.query_summary,
-                    players: playerData.response.player_count,
-                    stats: statsData,
-                    news: newsData,
-                    achievements: achData
-                };
-
-                updateUI(gameData, reviewData, playerData.response.player_count, statsData, newsData, achData);
+                updateUI(game, reviewJson, playerJson.response.player_count);
             } catch (err) {
                 console.error(err);
-                alert("Error: " + err.message);
-                document.getElementById('loadingScreen').classList.remove('hidden');
-                document.getElementById('dataPanel').classList.add('hidden');
+                alert("Error fetching data. Likely a CORS block or invalid AppID.");
             } finally {
-                btn.innerText = "▶ SCAN";
+                btn.innerText = "Analyze Game";
                 btn.classList.remove('loading');
             }
         }
 
-        function updateUI(game, reviewJson, players, stats, news, achievements) {
-            const reviews = reviewJson.query_summary;
+        function updateUI(game, reviewData, players) {
+            const reviews = reviewData.query_summary;
+            const reviewList = reviewData.reviews || [];
+
+            document.getElementById('mainDashboard').classList.remove('hidden');
             
-            // BASIC INFO
+            // --- Basic Identity & Meta ---
             document.getElementById('gameTitle').innerText = game.name;
-            document.getElementById('gameDev').innerText = game.developers?.join(', ') || "Unknown";
-            document.getElementById('gameDesc').innerText = game.short_description || "";
+            document.getElementById('gameDev').innerText = game.developers ? game.developers.join(', ') : "N/A";
+            document.getElementById('gamePub').innerText = game.publishers ? game.publishers.join(', ') : "N/A";
             document.getElementById('gameImg').src = game.header_image;
-            document.getElementById('gameAppId').innerText = game.steam_appid || "--";
+            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : (game.price_overview ? game.price_overview.final_formatted : "N/A");
             
-            const price = game.is_free ? 0 : (game.price_overview?.final / 100 || 0);
-            document.getElementById('gamePrice').innerText = game.is_free ? "FREE" : `$${price.toFixed(2)}`;
-            document.getElementById('gameRelease').innerText = game.release_date?.date || "TBA";
+            // Platforms
+            let plats = [];
+            if(game.platforms?.windows) plats.push("Win");
+            if(game.platforms?.mac) plats.push("Mac");
+            if(game.platforms?.linux) plats.push("Linux");
+            document.getElementById('gamePlatforms').innerText = plats.join(' / ') || "Unknown";
 
-            // PRICING
-            document.getElementById('priceUSD').innerText = `$${price.toFixed(2)}`;
-            const discount = game.price_overview?.discount_percent || 0;
-            document.getElementById('discountPercent').innerText = discount > 0 ? `-${discount}%` : "No discount";
-            document.getElementById('packageCount').innerText = game.packages?.length || 0;
-            document.getElementById('bundleCount').innerText = "N/A"; // Need separate API for bundles
-
-            // PLATFORMS
-            const platforms = [];
-            if(game.platforms?.windows) platforms.push("Windows");
-            if(game.platforms?.mac) platforms.push("macOS");
-            if(game.platforms?.linux) platforms.push("Linux");
-            document.getElementById('gamePlatforms').innerText = platforms.join(", ");
-
-            // SYSTEM REQUIREMENTS
-            if(game.pc_requirements?.minimum) {
-                document.getElementById('winMin').value = game.pc_requirements.minimum.replace(/<br>/g, '\n');
-            }
-            if(game.pc_requirements?.recommended) {
-                document.getElementById('winRec').value = game.pc_requirements.recommended.replace(/<br>/g, '\n');
-            }
-            if(game.mac_requirements?.minimum) {
-                document.getElementById('macReqs').value = game.mac_requirements.minimum.replace(/<br>/g, '\n');
-            }
-            if(game.linux_requirements?.minimum) {
-                document.getElementById('linuxReqs').value = game.linux_requirements.minimum.replace(/<br>/g, '\n');
+            // Expanded Meta Stats
+            document.getElementById('releaseDate').innerText = game.release_date?.coming_soon ? "Coming Soon" : (game.release_date?.date || "Unknown");
+            document.getElementById('metaScore').innerText = game.metacritic?.score || "N/A";
+            document.getElementById('dlcCount').innerText = game.dlc ? game.dlc.length : "0";
+            document.getElementById('achCount').innerText = game.achievements?.total || "0";
+            
+            // Description & Screenshots
+            document.getElementById('gameDescription').innerHTML = game.short_description || "No description available.";
+            const screenBox = document.getElementById('screenshotContainer');
+            screenBox.innerHTML = '';
+            if(game.screenshots) {
+                game.screenshots.forEach(s => {
+                    const img = document.createElement('img');
+                    img.src = s.path_thumbnail;
+                    img.className = "h-32 rounded border border-slate-700 shadow snap-center hover:scale-105 transition-transform cursor-pointer";
+                    // Open full res on click
+                    img.onclick = () => window.open(s.path_full, '_blank');
+                    screenBox.appendChild(img);
+                });
             }
 
-            // KEY METRICS
-            document.getElementById('livePlayers').innerText = players.toLocaleString();
+            // System Requirements
+            document.getElementById('sysMin').innerHTML = `<h4 class="font-bold text-cyan-400 mb-2">Minimum</h4> ${game.pc_requirements?.minimum || "N/A"}`;
+            document.getElementById('sysRec').innerHTML = `<h4 class="font-bold text-cyan-400 mb-2">Recommended</h4> ${game.pc_requirements?.recommended || "N/A"}`;
+
+            // --- Review & Player Stats ---
+            document.getElementById('livePlayers').innerText = (players || 0).toLocaleString();
             document.getElementById('totalReviews').innerText = reviews.total_reviews.toLocaleString();
             
-            const positivePercent = reviews.total_reviews > 0 ? 
-                Math.round((reviews.total_positive / reviews.total_reviews) * 100) : 0;
-            document.getElementById('positivePercent').innerText = positivePercent + "%";
+            // Dynamic Sentiment Coloring
+            const scoreDesc = reviews.review_score_desc || "Unknown";
+            let scoreColor = "text-slate-400"; // default
+            if (scoreDesc.includes("Overwhelmingly Positive")) scoreColor = "text-cyan-400";
+            else if (scoreDesc.includes("Very Positive")) scoreColor = "text-emerald-400";
+            else if (scoreDesc.includes("Mostly Positive") || scoreDesc.includes("Positive")) scoreColor = "text-green-400";
+            else if (scoreDesc.includes("Mixed")) scoreColor = "text-amber-400";
+            else if (scoreDesc.includes("Negative")) scoreColor = "text-red-500";
+            
+            const scoreEl = document.getElementById('reviewScoreDesc');
+            scoreEl.innerText = scoreDesc;
+            scoreEl.className = `font-bold text-sm text-right ${scoreColor}`;
 
-            // REVIEW BREAKDOWN
-            document.getElementById('totalPos').innerText = reviews.total_positive.toLocaleString();
-            document.getElementById('totalNeg').innerText = reviews.total_negative.toLocaleString();
-            document.getElementById('recentPos').innerText = reviews.total_positive_recent.toLocaleString();
-            document.getElementById('recentNeg').innerText = reviews.total_negative_recent.toLocaleString();
-            document.getElementById('reviewScoreDesc').innerText = reviews.review_score_desc || "Unknown";
+            // Trends
+            const allTimePct = reviews.total_reviews > 0 ? Math.round((reviews.total_positive / reviews.total_reviews) * 100) : 0;
+            document.getElementById('allTimePos').innerText = `${allTimePct}%`;
 
-            const recentScore = reviews.total_reviews_recent > 0 ?
-                Math.round((reviews.total_positive_recent / reviews.total_reviews_recent) * 100) : 0;
-            document.getElementById('metricRecent').innerText = recentScore + "%";
+            // Deep Sample Insights (Playtime & Purchase Info)
+            if (reviewList.length > 0) {
+                // Recent Pos
+                const recentPositives = reviewList.filter(r => r.voted_up).length;
+                document.getElementById('recentPos').innerText = `${Math.round((recentPositives / reviewList.length) * 100)}%`;
 
-            // PLAYTIME DATA (from reviews multilang)
-            if(reviewJson.reviews && reviewJson.reviews.length > 0) {
-                const playtimes = reviewJson.reviews.map(r => r.playtime_forever || 0);
-                const avgPlaytime = playtimes.length > 0 ? (playtimes.reduce((a,b) => a+b) / playtimes.length / 60).toFixed(1) : 0;
-                document.getElementById('avgPlaytime').innerText = avgPlaytime + "h";
-                document.getElementById('metricMedian').innerText = avgPlaytime + "h";
+                // Avg Playtime (convert minutes to hours)
+                const totalMins = reviewList.reduce((acc, r) => acc + (r.author?.playtime_forever || 0), 0);
+                const avgHours = (totalMins / reviewList.length) / 60;
+                document.getElementById('avgPlaytime').innerText = `${avgHours.toFixed(1)} hrs`;
+
+                // Steam Purchase Ratio
+                const steamBuys = reviewList.filter(r => r.steam_purchase).length;
+                document.getElementById('steamPurchaseRatio').innerText = `${Math.round((steamBuys / reviewList.length) * 100)}%`;
+            } else {
+                document.getElementById('recentPos').innerText = "N/A";
+                document.getElementById('avgPlaytime').innerText = "N/A";
+                document.getElementById('steamPurchaseRatio').innerText = "N/A";
             }
 
-            // REVENUE MODELS
-            const revLow = reviews.total_reviews * 30 * price;
-            const revMid = reviews.total_reviews * 45 * price;
-            const revHigh = reviews.total_reviews * 60 * price;
-            document.getElementById('revLow').innerText = "$" + Math.floor(revLow).toLocaleString();
-            document.getElementById('revMid').innerText = "$" + Math.floor(revMid).toLocaleString();
-            document.getElementById('revHigh').innerText = "$" + Math.floor(revHigh).toLocaleString();
+            // 3-Tier Revenue Math
+            const price = game.is_free ? 0 : (game.price_overview ? game.price_overview.final / 100 : 0);
+            document.getElementById('revCons').innerText = "$" + Math.floor(reviews.total_reviews * 20 * price).toLocaleString();
+            document.getElementById('revStd').innerText = "$" + Math.floor(reviews.total_reviews * 35 * price).toLocaleString();
+            document.getElementById('revAgg').innerText = "$" + Math.floor(reviews.total_reviews * 60 * price).toLocaleString();
 
-            // GAME AGE & VELOCITY
-            const releaseDate = new Date(game.release_date?.date || new Date());
-            const gameDays = Math.floor((Date.now() - releaseDate.getTime()) / (1000 * 60 * 60 * 24));
-            const reviewsPerDay = gameDays > 0 ? (reviews.total_reviews / gameDays).toFixed(2) : 0;
-            document.getElementById('metricAge').innerText = gameDays + " days";
-            document.getElementById('metricReviewsDay').innerText = reviewsPerDay;
-
-            // TAGS - Categories
-            const catBox = document.getElementById('categoryTags');
-            catBox.innerHTML = '';
-            if(game.categories) {
-                game.categories.forEach(cat => {
-                    const span = document.createElement('span');
-                    span.className = "tag tag-category";
-                    span.innerText = cat.description;
-                    catBox.appendChild(span);
-                });
-            }
-
-            // TAGS - Genres
-            const genBox = document.getElementById('genreTags');
-            genBox.innerHTML = '';
-            if(game.genres) {
-                game.genres.forEach(gen => {
-                    const span = document.createElement('span');
-                    span.className = "tag tag-category";
-                    span.innerText = gen.description;
-                    genBox.appendChild(span);
-                });
-            }
-
-            // TAGS - Features
-            const featBox = document.getElementById('featureTags');
-            featBox.innerHTML = '';
-            const supportedFeatures = ['Single-player', 'Multi-player', 'Co-op', 'Cloud Saves', 'Full controller support'];
-            supportedFeatures.forEach(feat => {
+            // Tags
+            const tagBox = document.getElementById('tagContainer');
+            tagBox.innerHTML = '';
+            const categories = [...(game.genres || []), ...(game.categories || [])];
+            const uniqueTags = Array.from(new Set(categories.map(c => c.description)));
+            uniqueTags.forEach(desc => {
                 const span = document.createElement('span');
-                span.className = "tag tag-feature";
-                span.innerText = feat;
-                featBox.appendChild(span);
+                span.className = "px-3 py-1 bg-slate-800 rounded text-xs text-cyan-400 border border-slate-700";
+                span.innerText = desc;
+                tagBox.appendChild(span);
             });
 
-            // TAGS - Platforms
-            const platBox = document.getElementById('platformTags');
-            platBox.innerHTML = '';
-            if(game.platforms?.windows) {
-                const sp = document.createElement('span');
-                sp.className = "tag";
-                sp.innerText = "WINDOWS";
-                platBox.appendChild(sp);
-            }
-            if(game.platforms?.mac) {
-                const sp = document.createElement('span');
-                sp.className = "tag";
-                sp.innerText = "MACOS";
-                platBox.appendChild(sp);
-            }
-            if(game.platforms?.linux) {
-                const sp = document.createElement('span');
-                sp.className = "tag";
-                sp.innerText = "LINUX";
-                platBox.appendChild(sp);
-            }
-
-            // DEV & PUB
-            const devList = document.getElementById('devList');
-            devList.innerHTML = '';
-            if(game.developers) {
-                game.developers.forEach(dev => {
-                    const span = document.createElement('span');
-                    span.className = "tag tag-category";
-                    span.innerText = dev;
-                    devList.appendChild(span);
-                });
-            }
-
-            const pubList = document.getElementById('pubList');
-            pubList.innerHTML = '';
-            if(game.publishers) {
-                game.publishers.forEach(pub => {
-                    const span = document.createElement('span');
-                    span.className = "tag tag-feature";
-                    span.innerText = pub;
-                    pubList.appendChild(span);
-                });
-            }
-
-            // CHART 1: Sentiment Donut
-            const ctx1 = document.getElementById('sentimentChart').getContext('2d');
+            // --- Charts ---
+            const ctxSent = document.getElementById('sentimentChart').getContext('2d');
             if(sentimentChart) sentimentChart.destroy();
-            sentimentChart = new Chart(ctx1, {
+            sentimentChart = new Chart(ctxSent, {
                 type: 'doughnut',
                 data: {
                     labels: ['Positive', 'Negative'],
                     datasets: [{
                         data: [reviews.total_positive, reviews.total_negative],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderColor: '#0a0e27',
-                        borderWidth: 4
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderColor: '#1e293b', borderWidth: 4
                     }]
                 },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace", size: 11 } }
-                        }
-                    }
-                }
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } } }
             });
 
-            // CHART 2: Score Comparison
-            const ctx2 = document.getElementById('scoreChart').getContext('2d');
-            if(scoreChart) scoreChart.destroy();
-            scoreChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: ['All-Time', 'Recent (30d)'],
-                    datasets: [{
-                        label: 'Positive Score %',
-                        data: [positivePercent, recentScore],
-                        backgroundColor: ['#06b6d4', '#10b981'],
-                        borderColor: '#0a0e27',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            max: 100,
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                        },
-                        y: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#94a3b8' }
-                        }
-                    }
-                }
-            });
+            // Language Chart
+            const langCounts = {};
+            reviewList.forEach(r => langCounts[r.language] = (langCounts[r.language] || 0) + 1);
+            const langLabels = Object.keys(langCounts).sort((a,b) => langCounts[b] - langCounts[a]);
+            const langData = langLabels.map(l => langCounts[l]);
 
-            // CHART 3: Language Distribution (from multilang reviews)
-            const languageData = reviewJson.review_list?.reduce((acc, r) => {
-                acc[r.language] = (acc[r.language] || 0) + 1;
-                return acc;
-            }, {}) || {};
-            
-            const topLangs = Object.entries(languageData)
-                .sort((a,b) => b[1] - a[1])
-                .slice(0, 5);
-
-            const ctx3 = document.getElementById('languageChart').getContext('2d');
+            const ctxLang = document.getElementById('languageChart').getContext('2d');
             if(languageChart) languageChart.destroy();
-            languageChart = new Chart(ctx3, {
+            languageChart = new Chart(ctxLang, {
                 type: 'bar',
                 data: {
-                    labels: topLangs.map(l => l[0] || 'Unknown'),
-                    datasets: [{
-                        label: 'Reviews',
-                        data: topLangs.map(l => l[1]),
-                        backgroundColor: '#a78bfa',
-                        borderColor: '#0a0e27',
-                        borderWidth: 2
-                    }]
+                    labels: langLabels.slice(0, 7),
+                    datasets: [{ label: 'Review Count', data: langData.slice(0, 7), backgroundColor: '#0ea5e9', borderRadius: 4 }]
                 },
                 options: {
-                    indexAxis: 'y',
                     maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                        },
-                        y: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    scales: { y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } },
+                    plugins: { legend: { display: false } }
                 }
             });
-
-            // JSON EXPORT
-            document.getElementById('jsonExport').value = JSON.stringify(rawData, null, 2);
-        }
-
-        function copyJson(type) {
-            let data;
-            if(type === 'store') data = rawData.store;
-            else if(type === 'reviews') data = rawData.reviews;
-            else data = rawData;
-            
-            const textarea = document.getElementById('jsonExport');
-            textarea.value = JSON.stringify(data, null, 2);
-            textarea.select();
-            document.execCommand('copy');
-            alert("Data copied!");
         }
     </script>
 </body>
